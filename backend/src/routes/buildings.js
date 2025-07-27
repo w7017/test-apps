@@ -179,14 +179,14 @@ router.post('/', authenticateToken, requireRole(['administrator', 'supervisor'])
 router.put('/:id', authenticateToken, requireRole(['administrator', 'supervisor']), async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, address, description, image } = req.body;
+    const { name, address, description, image, floors } = req.body;
 
     const result = await pool.query(`
       UPDATE buildings 
-      SET name = $1, address = $2, description = $3, image = $4, updated_at = CURRENT_TIMESTAMP
-      WHERE id = $5
+      SET name = $1, address = $2, description = $3, image = $4, floors = $5, updated_at = CURRENT_TIMESTAMP
+      WHERE id = $6
       RETURNING *
-    `, [name, address, description, image, id]);
+    `, [name, address, description, image, floors, id]);
 
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Building not found' });

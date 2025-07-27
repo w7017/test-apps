@@ -101,6 +101,7 @@ CREATE TABLE equipment (
     brand VARCHAR(255),
     model VARCHAR(255),
     serial_number VARCHAR(255),
+    description TEXT,
     location TEXT,
     installation_date DATE,
     warranty_end_date DATE,

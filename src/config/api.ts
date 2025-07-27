@@ -20,11 +20,19 @@ export const endpoints = {
   
   // Sites
   sites: '/sites',
+  siteImages: (id: string) => `/sites/${id}/images`,
+  uploadSiteImage: (id: string) => `/sites/${id}/upload-image`,
+  deleteSiteImage: (siteId: string, imageId: string) => `/sites/${siteId}/images/${imageId}`,
+  setSiteImagePrimary: (siteId: string, imageId: string) => `/sites/${siteId}/images/${imageId}/primary`,
   
   // Buildings - MISSING ENDPOINTS ADDED
   buildings: '/buildings',
   building: (id: string) => `/buildings/${id}`,
   buildingWithLevels: (id: string) => `/buildings/${id}/detailed`, // For getting building with all levels/locals/equipment
+  buildingImages: (id: string) => `/buildings/${id}/images`,
+  uploadBuildingImage: (id: string) => `/buildings/${id}/upload-image`,
+  deleteBuildingImage: (buildingId: string, imageId: string) => `/buildings/${buildingId}/images/${imageId}`,
+  setBuildingImagePrimary: (buildingId: string, imageId: string) => `/buildings/${buildingId}/images/${imageId}/primary`,
   
   // Equipment
   equipment: '/equipment',

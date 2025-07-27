@@ -52,19 +52,17 @@ router.get('/', authenticateToken, async (req, res) => {
         c.name as client_name,
         COUNT(DISTINCT l.id) as floors,
         COUNT(DISTINCT e.id) as equipments,
-        fa.file_path as image_path,
-        fa.original_name as image_name
+        bi.file_path as image_path,
+        bi.original_name as image_name
       FROM buildings b
       JOIN sites s ON b.site_id = s.id
       JOIN clients c ON s.client_id = c.id
       LEFT JOIN levels l ON b.id = l.building_id
       LEFT JOIN locals loc ON l.id = loc.level_id
       LEFT JOIN equipment e ON loc.id = e.local_id
-      LEFT JOIN file_attachments fa ON fa.entity_type = 'building' 
-        AND fa.entity_id = b.id 
-        AND fa.is_primary = true 
-        AND fa.file_type = 'image'
-      GROUP BY b.id, s.name, c.name, fa.file_path, fa.original_name
+      LEFT JOIN building_images bi ON bi.building_id = b.id 
+        AND bi.is_primary = true
+      GROUP BY b.id, s.name, c.name, bi.file_path, bi.original_name
       ORDER BY b.name
     `, []);
 
@@ -103,8 +101,8 @@ router.get('/:id', authenticateToken, async (req, res) => {
 
     // Get all images for this building
     const imagesResult = await pool.query(`
-      SELECT * FROM file_attachments 
-      WHERE entity_type = 'building' AND entity_id = $1 AND file_type = 'image'
+      SELECT * FROM building_images 
+      WHERE building_id = $1
       ORDER BY is_primary DESC, created_at ASC
     `, [id]);
 
@@ -126,11 +124,11 @@ router.get('/:id/images', authenticateToken, async (req, res) => {
     const { id } = req.params;
     
     const result = await pool.query(`
-      SELECT fa.*, u.first_name, u.last_name
-      FROM file_attachments fa
-      LEFT JOIN users u ON fa.uploaded_by = u.id
-      WHERE fa.entity_type = 'building' AND fa.entity_id = $1 AND fa.file_type = 'image'
-      ORDER BY fa.is_primary DESC, fa.created_at ASC
+      SELECT bi.*, u.first_name, u.last_name
+      FROM building_images bi
+      LEFT JOIN users u ON bi.uploaded_by = u.id
+      WHERE bi.building_id = $1
+      ORDER BY bi.is_primary DESC, bi.created_at ASC
     `, [id]);
     
     res.json(result.rows);
@@ -160,24 +158,22 @@ router.post('/:id/upload-image', authenticateToken, upload.single('image'), asyn
     // If this is marked as primary, unset other primary images for this building
     if (is_primary === 'true') {
       await pool.query(
-        'UPDATE file_attachments SET is_primary = false WHERE entity_type = $1 AND entity_id = $2 AND file_type = $3',
-        ['building', id, 'image']
+        'UPDATE building_images SET is_primary = false WHERE building_id = $1',
+        [id]
       );
     }
 
     // Insert file record
     const result = await pool.query(`
-      INSERT INTO file_attachments (entity_type, entity_id, file_path, original_name, file_size, mime_type, file_type, is_primary, description, uploaded_by)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      INSERT INTO building_images (building_id, file_path, original_name, file_size, mime_type, is_primary, description, uploaded_by)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       RETURNING *
     `, [
-      'building',
       id,
       '/' + file.path.replace(/\\/g, '/'), // Normalize path separators
       file.originalname,
       file.size,
       file.mimetype,
-      'image',
       is_primary === 'true',
       description,
       req.user.id
@@ -206,8 +202,8 @@ router.delete('/:id/images/:imageId', authenticateToken, requireRole(['administr
 
     // Get file info before deletion
     const fileResult = await pool.query(
-      'SELECT * FROM file_attachments WHERE id = $1 AND entity_type = $2 AND entity_id = $3',
-      [imageId, 'building', id]
+      'SELECT * FROM building_images WHERE id = $1 AND building_id = $2',
+      [imageId, id]
     );
 
     if (fileResult.rows.length === 0) {
@@ -224,7 +220,7 @@ router.delete('/:id/images/:imageId', authenticateToken, requireRole(['administr
     }
 
     // Delete from database
-    await pool.query('DELETE FROM file_attachments WHERE id = $1', [imageId]);
+    await pool.query('DELETE FROM building_images WHERE id = $1', [imageId]);
 
     // Log activity
     await logActivity(req.user.id, 'DELETE_BUILDING_IMAGE', 'building', id, {
@@ -245,14 +241,14 @@ router.put('/:id/images/:imageId/primary', authenticateToken, requireRole(['admi
 
     // Unset all primary images for this building
     await pool.query(
-      'UPDATE file_attachments SET is_primary = false WHERE entity_type = $1 AND entity_id = $2 AND file_type = $3',
-      ['building', id, 'image']
+      'UPDATE building_images SET is_primary = false WHERE building_id = $1',
+      [id]
     );
 
     // Set this image as primary
     const result = await pool.query(
-      'UPDATE file_attachments SET is_primary = true WHERE id = $1 AND entity_type = $2 AND entity_id = $3 RETURNING *',
-      [imageId, 'building', id]
+      'UPDATE building_images SET is_primary = true WHERE id = $1 AND building_id = $2 RETURNING *',
+      [imageId, id]
     );
 
     if (result.rows.length === 0) {
@@ -342,8 +338,8 @@ router.delete('/:id', authenticateToken, requireRole(['administrator']), async (
 
     // Get all images for this building to delete files
     const imagesResult = await pool.query(
-      'SELECT file_path FROM file_attachments WHERE entity_type = $1 AND entity_id = $2',
-      ['building', id]
+      'SELECT file_path FROM building_images WHERE building_id = $1',
+      [id]
     );
 
     // Delete image files from filesystem
@@ -401,8 +397,8 @@ router.get('/:id/detailed', authenticateToken, async (req, res) => {
 
     // Get images
     const imagesResult = await pool.query(`
-      SELECT * FROM file_attachments 
-      WHERE entity_type = 'building' AND entity_id = $1 AND file_type = 'image'
+      SELECT * FROM building_images 
+      WHERE building_id = $1
       ORDER BY is_primary DESC, created_at ASC
     `, [id]);
 

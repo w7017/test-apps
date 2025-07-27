@@ -278,6 +278,31 @@ class ApiService {
     });
   }
 
+  // Site Images
+  async getSiteImages(siteId: string) {
+    return this.request<any[]>(endpoints.siteImages(siteId));
+  }
+
+  async uploadSiteImage(siteId: string, formData: FormData) {
+    return this.request<any>(endpoints.uploadSiteImage(siteId), {
+      method: 'POST',
+      body: formData,
+      headers: this.getAuthHeaders(),
+    });
+  }
+
+  async deleteSiteImage(siteId: string, imageId: string) {
+    return this.request<any>(endpoints.deleteSiteImage(siteId, imageId), {
+      method: 'DELETE',
+    });
+  }
+
+  async setSiteImagePrimary(siteId: string, imageId: string) {
+    return this.request<any>(endpoints.setSiteImagePrimary(siteId, imageId), {
+      method: 'PUT',
+    });
+  }
+
   // Equipment
   async getEquipment(params?: {
     site_id?: string;
@@ -461,34 +486,28 @@ class ApiService {
 
 // Get building images
 async getBuildingImages(buildingId:any) {
-  return this.request(`/buildings/${buildingId}/images`);
+  return this.request<any[]>(endpoints.buildingImages(buildingId));
 }
 
 // Upload building image
 async uploadBuildingImage(buildingId:any, formData:any) {
-  return this.request(`/buildings/${buildingId}/upload-image`, {
+  return this.request<any>(endpoints.uploadBuildingImage(buildingId), {
     method: 'POST',
     body: formData,
-    headers: {
-      // Remove Content-Type header to let browser set it for FormData
-      // This is crucial for multipart/form-data uploads
-      ...Object.fromEntries(
-        Object.entries(this.getAuthHeaders()).filter(([key]) => key !== 'Content-Type')
-      )
-    }
+    headers: this.getAuthHeaders(),
   });
 }
 
 // Set primary image
 async setBuildingImagePrimary(buildingId:any, imageId:any) {
-  return this.request(`/buildings/${buildingId}/images/${imageId}/primary`, {
+  return this.request<any>(endpoints.setBuildingImagePrimary(buildingId, imageId), {
     method: 'PUT'
   });
 }
 
 // Delete building image
 async deleteBuildingImage(buildingId:any, imageId:any) {
-  return this.request(`/buildings/${buildingId}/images/${imageId}`, {
+  return this.request<any>(endpoints.deleteBuildingImage(buildingId, imageId), {
     method: 'DELETE'
   });
 }

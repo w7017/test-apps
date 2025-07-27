@@ -7,8 +7,8 @@ interface Building {
   name: string;
   floors: number;
   description: string;
-  images?: any[];
-  primaryImage?: any;
+  image?: File | null;
+  imagePreview?: string | null;
 }
 
 interface AddBuildingModalProps {
@@ -297,8 +297,8 @@ const AddBuildingModal = ({
 }) => {
   const [buildings, setBuildings] = useState(
     initialBuildings && initialBuildings.length > 0
-      ? initialBuildings.map(b => ({ ...b, image: null }))
-      : [{ name: '', floors: 1, description: '', image: null }]
+      ? initialBuildings.map(b => ({ ...b, image: null, imagePreview: null }))
+      : [{ name: '', floors: 1, description: '', image: null, imagePreview: null }]
   );
 
   const handleBuildingChange = (index, field, value) => {
@@ -307,18 +307,41 @@ const AddBuildingModal = ({
     ));
   };
 
-  const handleImageChange = (index, image) => {
+  const handleImageChange = (index, event) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        alert('Veuillez sélectionner un fichier image.');
+        return;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        alert('La taille du fichier ne doit pas dépasser 10MB.');
+        return;
+      }
+      
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setBuildings(prev => prev.map((building, i) => 
+          i === index ? { 
+            ...building, 
+            image: file,
+            imagePreview: e.target?.result as string
+          } : building
+        ));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeImage = (index) => {
     setBuildings(prev => prev.map((building, i) => 
-      i === index ? { 
-        ...building, 
-        image: image
-      } : building
+      i === index ? { ...building, image: null, imagePreview: null } : building
     ));
   };
 
   const addBuilding = () => {
     if (isEditMode) return;
-    setBuildings(prev => [...prev, { name: '', floors: 1, description: '', image: null }]);
+    setBuildings(prev => [...prev, { name: '', floors: 1, description: '', image: null, imagePreview: null }]);
   };
 
   const removeBuilding = (index:number) => {
@@ -333,10 +356,9 @@ const AddBuildingModal = ({
     const validBuildings = buildings.filter(b => b.name.trim());
     
     if (validBuildings.length > 0) {
-      // For new buildings with images, we'll need to handle the upload after building creation
       const buildingsWithImages = validBuildings.map(building => ({
         ...building,
-        tempImage: building.image?.tempFile ? building.image : null
+        tempImage: building.image
       }));
       
       onSave(buildingsWithImages);
@@ -475,13 +497,40 @@ const AddBuildingModal = ({
                         {/* Building Preview */}
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Aperçu du bâtiment
+                            Image du bâtiment
                           </label>
-                          <BuildingImageUploader
-                          buildingId={building.id}
-                          onImageChange={(image) => handleImageChange(index, image)}
-                          isNewBuilding={!building.id}
-                        />
+                          {!building.imagePreview ? (
+                            <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
+                              <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                              <label className="cursor-pointer bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 transition-colors">
+                                <span>Sélectionner une image</span>
+                                <input
+                                  type="file"
+                                  className="hidden"
+                                  accept="image/*"
+                                  onChange={(e) => handleImageChange(index, e)}
+                                />
+                              </label>
+                              <p className="text-xs text-gray-400 mt-1">PNG, JPG, WEBP jusqu'à 10MB</p>
+                            </div>
+                          ) : (
+                            <div className="relative">
+                              <div className="w-full h-32 bg-gray-100 rounded overflow-hidden">
+                                <img
+                                  src={building.imagePreview}
+                                  alt={building.name || 'Bâtiment'}
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => removeImage(index)}
+                                className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded hover:bg-red-600"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>

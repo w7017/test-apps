@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Building, MapPin, Users, Save } from 'lucide-react';
+import { X, Building, MapPin, Users, Save, Upload, Trash2 } from 'lucide-react';
 
 interface SiteModalProps {
   onClose: () => void;
@@ -14,8 +14,10 @@ const SiteModal: React.FC<SiteModalProps> = ({ onClose, onSave }) => {
     city: '',
     postalCode: '',
     country: 'France',
+    siteImage: null as File | null,
+    siteImagePreview: null as string | null,
     buildings: [
-      { name: '', floors: 1, description: '' }
+      { name: '', floors: 1, description: '', image: null as File | null, imagePreview: null as string | null }
     ]
   });
 
@@ -32,10 +34,84 @@ const SiteModal: React.FC<SiteModalProps> = ({ onClose, onSave }) => {
     }));
   };
 
+  const handleSiteImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        alert('Veuillez sélectionner un fichier image.');
+        return;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        alert('La taille du fichier ne doit pas dépasser 10MB.');
+        return;
+      }
+      
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setFormData(prev => ({
+          ...prev,
+          siteImage: file,
+          siteImagePreview: e.target?.result as string
+        }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleBuildingImageChange = (index: number, event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        alert('Veuillez sélectionner un fichier image.');
+        return;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        alert('La taille du fichier ne doit pas dépasser 10MB.');
+        return;
+      }
+      
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setFormData(prev => ({
+          ...prev,
+          buildings: prev.buildings.map((building, i) => 
+            i === index ? { 
+              ...building, 
+              image: file,
+              imagePreview: e.target?.result as string
+            } : building
+          )
+        }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeSiteImage = () => {
+    setFormData(prev => ({
+      ...prev,
+      siteImage: null,
+      siteImagePreview: null
+    }));
+  };
+
+  const removeBuildingImage = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      buildings: prev.buildings.map((building, i) => 
+        i === index ? { 
+          ...building, 
+          image: null,
+          imagePreview: null
+        } : building
+      )
+    }));
+  };
+
   const addBuilding = () => {
     setFormData(prev => ({
       ...prev,
-      buildings: [...prev.buildings, { name: '', floors: 1, description: '' }]
+      buildings: [...prev.buildings, { name: '', floors: 1, description: '', image: null, imagePreview: null }]
     }));
   };
 
@@ -50,7 +126,17 @@ const SiteModal: React.FC<SiteModalProps> = ({ onClose, onSave }) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData);
+    // Include image files in the data
+    const siteDataWithImages = {
+      ...formData,
+      buildings: formData.buildings.map(building => ({
+        name: building.name,
+        floors: building.floors,
+        description: building.description,
+        tempImage: building.image
+      }))
+    };
+    onSave(siteDataWithImages);
     onClose();
   };
 
@@ -168,6 +254,43 @@ const SiteModal: React.FC<SiteModalProps> = ({ onClose, onSave }) => {
                     required
                   />
                 </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Image du site
+                  </label>
+                  {!formData.siteImagePreview ? (
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
+                      <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                      <label className="cursor-pointer bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 transition-colors">
+                        <span>Sélectionner une image</span>
+                        <input
+                          type="file"
+                          className="hidden"
+                          accept="image/*"
+                          onChange={handleSiteImageChange}
+                        />
+                      </label>
+                      <p className="text-xs text-gray-400 mt-1">PNG, JPG, WEBP jusqu'à 10MB</p>
+                    </div>
+                  ) : (
+                    <div className="relative">
+                      <div className="w-full h-32 bg-gray-100 rounded overflow-hidden">
+                        <img
+                          src={formData.siteImagePreview}
+                          alt="Aperçu du site"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={removeSiteImage}
+                        className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded hover:bg-red-600"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -245,21 +368,40 @@ const SiteModal: React.FC<SiteModalProps> = ({ onClose, onSave }) => {
                     {/* Building Image Preview */}
                     <div className="mt-3">
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Aperçu du bâtiment
+                        Image du bâtiment
                       </label>
-                      <div className="w-full h-32 bg-gray-100 rounded-lg overflow-hidden">
-                        <img 
-                          src={getBuildingImagePreview(building.name)} 
-                          alt={building.name || 'Bâtiment'}
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            e.currentTarget.src = 'https://images.pexels.com/photos/323780/pexels-photo-323780.jpeg?auto=compress&cs=tinysrgb&w=400';
-                          }}
-                        />
-                      </div>
-                      <p className="text-xs text-gray-500 mt-1">
-                        L'image est sélectionnée automatiquement selon le type de bâtiment
-                      </p>
+                      {!building.imagePreview ? (
+                        <div className="border-2 border-dashed border-gray-300 rounded-lg p-3 text-center">
+                          <Upload className="w-6 h-6 text-gray-400 mx-auto mb-1" />
+                          <label className="cursor-pointer bg-orange-600 text-white px-2 py-1 rounded text-xs hover:bg-orange-700 transition-colors">
+                            <span>Sélectionner</span>
+                            <input
+                              type="file"
+                              className="hidden"
+                              accept="image/*"
+                              onChange={(e) => handleBuildingImageChange(index, e)}
+                            />
+                          </label>
+                          <p className="text-xs text-gray-400 mt-1">Optionnel</p>
+                        </div>
+                      ) : (
+                        <div className="relative">
+                          <div className="w-full h-24 bg-gray-100 rounded overflow-hidden">
+                            <img
+                              src={building.imagePreview}
+                              alt={building.name || 'Bâtiment'}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => removeBuildingImage(index)}
+                            className="absolute top-1 right-1 bg-red-500 text-white p-0.5 rounded hover:bg-red-600"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}

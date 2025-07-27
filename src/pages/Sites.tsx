@@ -276,7 +276,27 @@ const Sites = () => {
     try {
       if (!selectedSiteForBuilding) return;
       
-      await apiService.addBuildingsToSite(selectedSiteForBuilding.id, buildings);
+      const result = await apiService.addBuildingsToSite(selectedSiteForBuilding.id, buildings);
+      
+      // Upload building images if provided
+      if (result.buildings) {
+        for (let i = 0; i < result.buildings.length; i++) {
+          const building = result.buildings[i];
+          const originalBuilding = buildings[i];
+          
+          if (originalBuilding.tempImage) {
+            try {
+              const formData = new FormData();
+              formData.append('image', originalBuilding.tempImage);
+              formData.append('is_primary', 'true');
+              await apiService.uploadBuildingImage(building.id, formData);
+            } catch (imageError) {
+              console.error(`Error uploading building image for ${building.name}:`, imageError);
+              // Don't fail the whole operation for image upload issues
+            }
+          }
+        }
+      }
       
       // Recharger les données
       await loadClientsAndSites();
@@ -298,6 +318,7 @@ const Sites = () => {
         alert('Veuillez sélectionner un client avant de créer un site.');
         return;
       }
+      
       // Crée le site avec le client actif
       const newSite = await apiService.createSite({
         client_id: selectedClient.id,
@@ -309,6 +330,40 @@ const Sites = () => {
         country: siteData.country,
         buildings: siteData.buildings
       });
+      
+      // Upload site image if provided
+      if (siteData.siteImage) {
+        try {
+          const formData = new FormData();
+          formData.append('image', siteData.siteImage);
+          formData.append('is_primary', 'true');
+          await apiService.uploadSiteImage(newSite.id, formData);
+        } catch (imageError) {
+          console.error('Error uploading site image:', imageError);
+          // Don't fail the whole operation for image upload issues
+        }
+      }
+      
+      // Upload building images if provided
+      if (newSite.buildings) {
+        for (let i = 0; i < newSite.buildings.length; i++) {
+          const building = newSite.buildings[i];
+          const originalBuilding = siteData.buildings[i];
+          
+          if (originalBuilding.tempImage) {
+            try {
+              const formData = new FormData();
+              formData.append('image', originalBuilding.tempImage);
+              formData.append('is_primary', 'true');
+              await apiService.uploadBuildingImage(building.id, formData);
+            } catch (imageError) {
+              console.error(`Error uploading building image for ${building.name}:`, imageError);
+              // Don't fail the whole operation for image upload issues
+            }
+          }
+        }
+      }
+      
       // Recharge les données pour refléter les changements
       await loadClientsAndSites();
       refreshClients(); // Refresh clients in context
@@ -353,6 +408,20 @@ const Sites = () => {
       // On ne gère qu'un seul bâtiment à la fois en édition
       const updated = { ...editBuilding, ...buildings[0] };
       await apiService.updateBuilding(updated.id, updated);
+      
+      // Upload new image if provided
+      if (buildings[0].tempImage) {
+        try {
+          const formData = new FormData();
+          formData.append('image', buildings[0].tempImage);
+          formData.append('is_primary', 'true');
+          await apiService.uploadBuildingImage(updated.id, formData);
+        } catch (imageError) {
+          console.error('Error uploading building image:', imageError);
+          // Don't fail the whole operation for image upload issues
+        }
+      }
+      
       setShowEditBuildingModal(false);
       setEditBuilding(null);
       await loadClientsAndSites();
@@ -380,13 +449,17 @@ const Sites = () => {
       return buildingImages[building.id];
     }
 
-    // If building has a photo property, use it
+    // If building has image_path from the API response, use it
+    if (building.image_path) {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+      return `${apiUrl}${building.image_path.startsWith('/') ? building.image_path : '/' + building.image_path}`;
+    }
+
+    // If building has a photo property (legacy), use it
     if (building.photo) {
-      // If it's already a full URL, use it
       if (building.photo.startsWith('http')) {
         return building.photo;
       }
-      // If it's a relative path, construct the full URL
       const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
       return `${apiUrl}${building.photo.startsWith('/') ? building.photo : '/' + building.photo}`;
     }

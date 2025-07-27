@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Upload, X, Star, StarOff, Eye, Trash2 } from 'lucide-react';
 import { apiService } from '../services/api';
 
-const BuildingImageManager = ({ buildingId, onImagesChange }) => {
+const BuildingImageManager = ({ buildingId, onImagesChange, entityType = 'building' }) => {
   const [images, setImages] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [previewImage, setPreviewImage] = useState(null);
@@ -16,7 +16,9 @@ const BuildingImageManager = ({ buildingId, onImagesChange }) => {
 
   const loadImages = async () => {
     try {
-      const response = await apiService.getBuildingImages(buildingId);
+      const response = entityType === 'building' 
+        ? await apiService.getBuildingImages(buildingId)
+        : await apiService.getSiteImages(buildingId);
       setImages(response);
       if (onImagesChange) {
         onImagesChange(response);
@@ -54,7 +56,9 @@ const uploadImage = async (file:any, isPrimary = false) => {
       formData.append('image', file);  // Must match backend expectation
       formData.append('is_primary', isPrimary.toString());
   
-      const response = await apiService.uploadBuildingImage(buildingId, formData);
+      const response = entityType === 'building'
+        ? await apiService.uploadBuildingImage(buildingId, formData)
+        : await apiService.uploadSiteImage(buildingId, formData);
       
       // Reload images
       await loadImages();
@@ -70,7 +74,11 @@ const uploadImage = async (file:any, isPrimary = false) => {
 
   const handleSetPrimary = async (imageId:any) => {
     try {
-      await apiService.setBuildingImagePrimary(buildingId, imageId);
+      if (entityType === 'building') {
+        await apiService.setBuildingImagePrimary(buildingId, imageId);
+      } else {
+        await apiService.setSiteImagePrimary(buildingId, imageId);
+      }
       await loadImages();
     } catch (error) {
       console.error('Error setting primary image:', error);
@@ -84,7 +92,11 @@ const uploadImage = async (file:any, isPrimary = false) => {
     }
 
     try {
-      await apiService.deleteBuildingImage(buildingId, imageId);
+      if (entityType === 'building') {
+        await apiService.deleteBuildingImage(buildingId, imageId);
+      } else {
+        await apiService.deleteSiteImage(buildingId, imageId);
+      }
       await loadImages();
       alert('Image supprimée avec succès !');
     } catch (error) {
@@ -134,7 +146,7 @@ const uploadImage = async (file:any, isPrimary = false) => {
         <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
         <div className="space-y-2">
           <p className="text-lg font-medium text-gray-900">
-            Télécharger une image du bâtiment
+            Télécharger une image {entityType === 'building' ? 'du bâtiment' : 'du site'}
           </p>
           <p className="text-sm text-gray-500">
             Glissez-déposez une image ou cliquez pour sélectionner
@@ -169,7 +181,9 @@ const uploadImage = async (file:any, isPrimary = false) => {
       {/* Images Grid */}
       {images.length > 0 && (
         <div className="space-y-4">
-          <h4 className="font-medium text-gray-900">Images du bâtiment ({images.length})</h4>
+          <h4 className="font-medium text-gray-900">
+            Images {entityType === 'building' ? 'du bâtiment' : 'du site'} ({images.length})
+          </h4>
           
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {images.map((image:any) => (

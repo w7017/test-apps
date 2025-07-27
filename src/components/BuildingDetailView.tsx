@@ -15,6 +15,7 @@ import {
   Plus,
   Search
 } from 'lucide-react';
+import { useClient } from '../contexts/ClientContext';
 
 interface BuildingDetailViewProps {
   building: any;
@@ -36,6 +37,7 @@ const BuildingDetailView: React.FC<BuildingDetailViewProps> = ({
   const [showAddLevelModal, setShowAddLevelModal] = useState(false);
   const [showAddLocalModal, setShowAddLocalModal] = useState(false);
   const [showAddEquipmentModal, setShowAddEquipmentModal] = useState(false);
+  const { refreshClients } = useClient();
 
   useEffect(() => {
     loadBuildingData();
@@ -210,6 +212,7 @@ const BuildingDetailView: React.FC<BuildingDetailViewProps> = ({
       
       updateLevelsState(updatedLevels);
       setShowAddEquipmentModal(false);
+      await refreshClients(); // Synchronise le contexte client
     } catch (error) {
       console.error('Error creating equipments:', error);
       alert('Erreur lors de la création des équipements');

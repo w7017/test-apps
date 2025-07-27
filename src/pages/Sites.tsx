@@ -236,6 +236,7 @@ const Sites = () => {
       
       // Recharger les données
       await loadClientsAndSites();
+      await refreshClients(); // Synchronise le contexte client
       
       setShowAddBuildingModal(false);
       setSelectedSiteForBuilding(null);
@@ -311,6 +312,7 @@ const Sites = () => {
       setShowEditBuildingModal(false);
       setEditBuilding(null);
       await loadClientsAndSites();
+      await refreshClients(); // Synchronise le contexte client
     } catch (err) {
       alert('Erreur lors de la modification du bâtiment');
     }
@@ -321,6 +323,7 @@ const Sites = () => {
     try {
       await apiService.deleteBuilding(building.id);
       await loadClientsAndSites();
+      await refreshClients(); // Synchronise le contexte client
     } catch (err) {
       alert('Erreur lors de la suppression du bâtiment');
     }

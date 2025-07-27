@@ -51,6 +51,11 @@ CREATE TABLE buildings (
     site_id UUID REFERENCES sites(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
     floors INTEGER DEFAULT 1,
+    address TEXT,
+    city VARCHAR(100),
+    postal_code VARCHAR(20),
+    country VARCHAR(100) DEFAULT 'France',
+    image VARCHAR(500),
     description TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

@@ -188,26 +188,56 @@ router.delete('/:id', authenticateToken, requireRole(['administrator']), async (
   try {
     const { id } = req.params;
 
-    // Check if client has sites
-    const sitesResult = await pool.query('SELECT COUNT(*) FROM sites WHERE client_id = $1', [id]);
-    if (parseInt(sitesResult.rows[0].count) > 0) {
-      return res.status(400).json({ error: 'Cannot delete client with existing sites' });
-    }
-
     // Get client name before deletion
     const clientResult = await pool.query('SELECT name FROM clients WHERE id = $1', [id]);
     if (clientResult.rows.length === 0) {
       return res.status(404).json({ error: 'Client not found' });
     }
 
-    await pool.query('DELETE FROM clients WHERE id = $1', [id]);
+    // Start a transaction to handle cascading deletes
+    await pool.query('BEGIN');
 
-    // Log activity
-    await logActivity(req.user.id, 'DELETE_CLIENT', 'client', id, {
-      name: clientResult.rows[0].name
-    }, req.ip, req.get('User-Agent'));
+    try {
+      // Delete all equipment associated with buildings of this client
+      await pool.query(`
+        DELETE FROM equipment 
+        WHERE building_id IN (
+          SELECT b.id FROM buildings b 
+          JOIN sites s ON b.site_id = s.id 
+          WHERE s.client_id = $1
+        )
+      `, [id]);
 
-    res.json({ message: 'Client deleted successfully' });
+      // Delete all buildings associated with sites of this client
+      await pool.query(`
+        DELETE FROM buildings 
+        WHERE site_id IN (
+          SELECT id FROM sites WHERE client_id = $1
+        )
+      `, [id]);
+
+      // Delete all sites of this client
+      await pool.query('DELETE FROM sites WHERE client_id = $1', [id]);
+
+      // Finally delete the client
+      await pool.query('DELETE FROM clients WHERE id = $1', [id]);
+
+      // Commit the transaction
+      await pool.query('COMMIT');
+
+      // Log activity
+      await logActivity(req.user.id, 'DELETE_CLIENT', 'client', id, {
+        name: clientResult.rows[0].name
+      }, req.ip, req.get('User-Agent'));
+
+      res.json({ message: 'Client deleted successfully' });
+
+    } catch (deleteError) {
+      // Rollback on error
+      await pool.query('ROLLBACK');
+      throw deleteError;
+    }
+
   } catch (error) {
     console.error('Error deleting client:', error);
     res.status(500).json({ error: 'Internal server error' });

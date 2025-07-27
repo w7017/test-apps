@@ -210,25 +210,18 @@ router.delete('/:id', authenticateToken, requireRole(['administrator']), async (
   try {
     const { id } = req.params;
 
-    // Check if building has equipment
-    const equipmentResult = await pool.query(`
-      SELECT COUNT(*) 
-      FROM equipment e
-      JOIN locals loc ON e.local_id = loc.id
-      JOIN levels l ON loc.level_id = l.id
-      WHERE l.building_id = $1
-    `, [id]);
-
-    if (parseInt(equipmentResult.rows[0].count) > 0) {
-      return res.status(400).json({ error: 'Cannot delete building with existing equipment' });
-    }
-
     // Get building info before deletion
     const buildingResult = await pool.query('SELECT name FROM buildings WHERE id = $1', [id]);
     if (buildingResult.rows.length === 0) {
       return res.status(404).json({ error: 'Building not found' });
     }
 
+    // The database cascading deletes will automatically handle:
+    // - levels (ON DELETE CASCADE)
+    // - locals (through levels cascade)
+    // - equipment (through building_id FK and local_id cascade)
+    // - audits (through equipment cascade)
+    // - audit_items and audit_photos (through audits cascade)
     await pool.query('DELETE FROM buildings WHERE id = $1', [id]);
 
     // Log activity

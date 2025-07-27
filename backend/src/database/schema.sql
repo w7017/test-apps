@@ -55,7 +55,6 @@ CREATE TABLE buildings (
     city VARCHAR(100),
     postal_code VARCHAR(20),
     country VARCHAR(100) DEFAULT 'France',
-    image VARCHAR(500),
     description TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -195,6 +194,22 @@ CREATE TABLE settings (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- File attachments table
+CREATE TABLE file_attachments (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    entity_type VARCHAR(50) NOT NULL, -- 'building', 'equipment', 'audit', 'site', 'client'
+    entity_id UUID NOT NULL,
+    file_path VARCHAR(500) NOT NULL,
+    original_name VARCHAR(255) NOT NULL,
+    file_size INTEGER,
+    mime_type VARCHAR(100),
+    file_type VARCHAR(50) NOT NULL, -- 'image', 'document', 'video', 'pdf'
+    is_primary BOOLEAN DEFAULT false,
+    description TEXT,
+    uploaded_by UUID REFERENCES users(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Activity log table
 CREATE TABLE activity_log (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -220,6 +235,9 @@ CREATE INDEX idx_sites_client ON sites(client_id);
 CREATE INDEX idx_buildings_site ON buildings(site_id);
 CREATE INDEX idx_levels_building ON levels(building_id);
 CREATE INDEX idx_locals_level ON locals(level_id);
+CREATE INDEX idx_file_attachments_entity ON file_attachments(entity_type, entity_id);
+CREATE INDEX idx_file_attachments_type ON file_attachments(file_type);
+CREATE INDEX idx_file_attachments_primary ON file_attachments(entity_type, entity_id, is_primary);
 CREATE INDEX idx_activity_log_user ON activity_log(user_id);
 CREATE INDEX idx_activity_log_date ON activity_log(created_at);
 

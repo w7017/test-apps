@@ -21,27 +21,33 @@ class ApiService {
   ): Promise<T> {
     const url = `${this.baseURL}${endpoint}`;
     
+    // Default headers
     const headers: HeadersInit = {
-      'Content-Type': 'application/json',
       ...options.headers,
     };
-
+  
+    // Only add Content-Type for JSON requests, not for FormData
+    if (!(options.body instanceof FormData)) {
+      headers['Content-Type'] = 'application/json';
+    }
+  
+    // Add auth header if token exists
     if (this.token) {
       headers.Authorization = `Bearer ${this.token}`;
     }
-
+  
     try {
       const response = await fetch(url, {
         ...options,
         headers,
-        timeout: apiConfig.timeout,
+        // Remove timeout as it's not a standard fetch option
       });
-
+  
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
       }
-
+  
       return await response.json();
     } catch (error) {
       console.error('API Request failed:', error);
@@ -450,6 +456,51 @@ class ApiService {
       body: JSON.stringify({ columns, sample_data: sampleData }),
     });
   }
+
+  // Add these methods to your ApiService class
+
+// Get building images
+async getBuildingImages(buildingId:any) {
+  return this.request(`/buildings/${buildingId}/images`);
+}
+
+// Upload building image
+async uploadBuildingImage(buildingId:any, formData:any) {
+  return this.request(`/buildings/${buildingId}/upload-image`, {
+    method: 'POST',
+    body: formData,
+    headers: {
+      // Remove Content-Type header to let browser set it for FormData
+      // This is crucial for multipart/form-data uploads
+      ...Object.fromEntries(
+        Object.entries(this.getAuthHeaders()).filter(([key]) => key !== 'Content-Type')
+      )
+    }
+  });
+}
+
+// Set primary image
+async setBuildingImagePrimary(buildingId:any, imageId:any) {
+  return this.request(`/buildings/${buildingId}/images/${imageId}/primary`, {
+    method: 'PUT'
+  });
+}
+
+// Delete building image
+async deleteBuildingImage(buildingId:any, imageId:any) {
+  return this.request(`/buildings/${buildingId}/images/${imageId}`, {
+    method: 'DELETE'
+  });
+}
+
+// Helper method to get auth headers
+private getAuthHeaders() {
+  const headers: HeadersInit = {};
+  if (this.token) {
+    headers.Authorization = `Bearer ${this.token}`;
+  }
+  return headers;
+}
 }
 
 export const apiService = new ApiService();

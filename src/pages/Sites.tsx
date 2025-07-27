@@ -46,6 +46,7 @@ const Sites = () => {
   }>({ totalResults: 0, clientMatches: 0, siteMatches: 0, buildingMatches: 0 });
   const [showEditBuildingModal, setShowEditBuildingModal] = useState(false);
   const [editBuilding, setEditBuilding] = useState<any>(null);
+  const [buildingImages, setBuildingImages] = useState<{[key: string]: string}>({});
 
   useEffect(() => {
     loadClientsAndSites();
@@ -153,6 +154,40 @@ const Sites = () => {
     setExpandedClients(prev => [...new Set([...prev, ...clientsWithResults])]);
   };
 
+  const loadBuildingImages = async (buildings: any[]) => {
+    const imagePromises = buildings.map(async (building) => {
+      if (!building.id) return null;
+      
+      try {
+        const images = await apiService.getBuildingImages(building.id);
+        const primaryImage = images.find(img => img.is_primary) || images[0];
+        
+        if (primaryImage) {
+          const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+          const imagePath = primaryImage.file_path.startsWith('/') ? primaryImage.file_path : `/${primaryImage.file_path}`;
+          const imageUrl = `${apiUrl}${imagePath}`;
+          
+          return { buildingId: building.id, imageUrl };
+        }
+      } catch (error) {
+        console.error(`Error loading image for building ${building.id}:`, error);
+      }
+      
+      return null;
+    });
+
+    const results = await Promise.all(imagePromises);
+    const imageMap = {};
+    
+    results.forEach(result => {
+      if (result) {
+        imageMap[result.buildingId] = result.imageUrl;
+      }
+    });
+
+    setBuildingImages(prev => ({ ...prev, ...imageMap }));
+  };
+
   const loadClientsAndSites = async () => {
     try {
       setLoading(true);
@@ -202,6 +237,15 @@ const Sites = () => {
       );
       
       setClients(clientsWithSites);
+      
+      // Load images for all buildings
+      const allBuildings = clientsWithSites.flatMap(client => 
+        client.sites.flatMap(site => site.buildings)
+      );
+      
+      if (allBuildings.length > 0) {
+        await loadBuildingImages(allBuildings);
+      }
       
       // Expand first client by default if any exist
       if (clientsWithSites.length > 0) {
@@ -329,9 +373,26 @@ const Sites = () => {
     }
   };
 
-  // Function to get building image based on building name/type
-  const getBuildingImage = (buildingName: string) => {
-    const name = buildingName.toLowerCase();
+  // Function to get building image - now uses API images first, then fallback to static
+  const getBuildingImage = (building: any) => {
+    // First, check if we have a loaded image from the API
+    if (buildingImages[building.id]) {
+      return buildingImages[building.id];
+    }
+
+    // If building has a photo property, use it
+    if (building.photo) {
+      // If it's already a full URL, use it
+      if (building.photo.startsWith('http')) {
+        return building.photo;
+      }
+      // If it's a relative path, construct the full URL
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+      return `${apiUrl}${building.photo.startsWith('/') ? building.photo : '/' + building.photo}`;
+    }
+
+    // Fallback to default images based on building name/type
+    const name = building.name.toLowerCase();
     
     if (name.includes('atelier') || name.includes('usine') || name.includes('production')) {
       return 'https://images.pexels.com/photos/236698/pexels-photo-236698.jpeg?auto=compress&cs=tinysrgb&w=400';
@@ -528,9 +589,15 @@ const Sites = () => {
                               {/* Building Image */}
                               <div className="w-full h-20 bg-gray-100 rounded-t-lg overflow-hidden">
                                 <img 
-                                  src={building.photo || getBuildingImage(building.name)}
+                                  src={getBuildingImage(building)}
                                   alt={building.name}
                                   className="object-cover w-full h-full"
+                                  crossOrigin="anonymous"
+                                  onError={(e) => {
+                                    console.error('Error loading building image:', building);
+                                    // Fallback to default image
+                                    e.currentTarget.src = 'https://images.pexels.com/photos/323780/pexels-photo-323780.jpeg?auto=compress&cs=tinysrgb&w=400';
+                                  }}
                                 />
                               </div>
                               <div className="px-2 pb-2 pt-1">

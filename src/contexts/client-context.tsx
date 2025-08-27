@@ -12,36 +12,51 @@ interface ClientContextType {
   clients: Client[];
   selectedClient: Client | null;
   setSelectedClient: (client: Client | null) => void;
+  loading: boolean;
 }
-
-const mockClients: Client[] = [
-  { id: 'client-1', name: 'Client Alpha', description: 'Grand compte industriel avec plusieurs sites de production.' },
-  { id: 'client-2', name: 'Client Bravo', description: 'Réseau de boutiques dans le secteur du retail.' },
-  { id: 'client-3', name: 'Client Charlie', description: 'Gestionnaire de parc immobilier de bureaux.' },
-    { id: 'client-4', name: 'Client Delta', description: 'Hôpital et centre de recherche médicale.' },
-];
 
 export const ClientContext = createContext<ClientContextType>({
   clients: [],
   selectedClient: null,
   setSelectedClient: () => {},
+  loading: false,
 });
 
 export const ClientProvider = ({ children }: { children: React.ReactNode }) => {
-  const [clients] = useState<Client[]>(mockClients);
+  const [clients, setClients] = useState<Client[]>([]);
   const [selectedClient, setSelectedClientState] = useState<Client | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    const storedClientId = localStorage.getItem('selectedClientId');
-    if (storedClientId) {
-      const client = clients.find(c => c.id === storedClientId);
-      setSelectedClientState(client || null);
-    } else if (clients.length > 0) {
-      // Select the first client by default if none is stored
-      setSelectedClientState(clients[0]);
-      localStorage.setItem('selectedClientId', clients[0].id);
-    }
-  }, [clients]);
+    const fetchClients = async () => {
+      try {
+        const res = await fetch('/api/clients');
+        const data = await res.json();
+
+        if (Array.isArray(data)) {
+          setClients(data);
+
+          const storedClientId = localStorage.getItem('selectedClientId');
+          const storedClient = data.find((c) => c.id === storedClientId);
+
+          if (storedClient) {
+            setSelectedClientState(storedClient);
+          } else if (data.length > 0) {
+            setSelectedClientState(data[0]);
+            localStorage.setItem('selectedClientId', data[0].id);
+          }
+        } else {
+          console.error('API did not return an array:', data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch clients:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchClients();
+  }, []);
 
   const setSelectedClient = (client: Client | null) => {
     setSelectedClientState(client);
@@ -53,7 +68,7 @@ export const ClientProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <ClientContext.Provider value={{ clients, selectedClient, setSelectedClient }}>
+    <ClientContext.Provider value={{ clients, selectedClient, setSelectedClient, loading }}>
       {children}
     </ClientContext.Provider>
   );

@@ -1,0 +1,770 @@
+
+
+'use client';
+
+import React, { useState, useContext, useMemo, useEffect } from 'react';
+import { ClientContext } from '@/contexts/client-context';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import Image from 'next/image';
+import Link from 'next/link';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  PlusCircle,
+  Edit,
+  Trash2,
+  Building,
+  Layers,
+  DoorOpen,
+  Server,
+  Home,
+  ChevronRight,
+  UploadCloud,
+  Eye,
+  Copy,
+  Search,
+  ListFilter,
+  QrCode,
+  Loader2
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
+import { usePathname } from 'next/navigation';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
+import { generateQrCode } from '@/ai/flows/generate-qr-code';
+import { useToast } from '@/hooks/use-toast';
+
+// Mock data structure with images
+const initialTreeData = {
+  'client-1': [
+    {
+      id: 'site-1',
+      name: 'Site de Production Alpha',
+      type: 'site',
+      image: 'https://picsum.photos/seed/site1/400/300',
+      children: [
+        {
+          id: 'bat-1',
+          name: 'Bâtiment Principal',
+          type: 'batiment',
+          image: 'https://picsum.photos/seed/bat1/400/300',
+          children: [
+            { id: 'niv-1', name: 'Rez-de-chaussée', type: 'niveau', image: 'https://picsum.photos/seed/niv1/400/300', children: [
+                { id: 'loc-1', name: 'Atelier A', type: 'local', image: 'https://picsum.photos/seed/loc1/400/300', children: [
+                    { id: 'eq-1', name: 'Presse Hydraulique P-101', type: 'equipement', image: 'https://picsum.photos/seed/eq1/200/200', reference: 'P-101', domaineTechnique: 'Mécanique', statut: 'En service', marque: 'Siemens' },
+                    { id: 'eq-2', name: 'Convoyeur C-203', type: 'equipement', image: 'https://picsum.photos/seed/eq2/200/200', reference: 'C-203', domaineTechnique: 'Automatisme', statut: 'Alerte', marque: 'Bosch' },
+                ]},
+                { id: 'loc-2', name: 'Magasin', type: 'local', image: 'https://picsum.photos/seed/loc2/400/300', children: [] },
+            ]},
+            { id: 'niv-2', name: '1er Étage', type: 'niveau', image: 'https://picsum.photos/seed/niv2/400/300', children: [
+                { id: 'loc-3', name: 'Bureaux Administratifs', type: 'local', image: 'https://picsum.photos/seed/loc3/400/300', children: [
+                    { id: 'eq-3', name: 'Serveur S-01', type: 'equipement', image: 'https://picsum.photos/seed/eq3/200/200', reference: 'S-01', domaineTechnique: 'IT', statut: 'Hors service', marque: 'Dell' },
+                ]},
+            ]},
+          ],
+        },
+      ],
+    },
+     {
+      id: 'site-2',
+      name: 'Entrepôt Logistique Bravo',
+      type: 'site',
+      image: 'https://picsum.photos/seed/site2/400/300',
+      children: [],
+    },
+  ],
+  'client-2': [],
+  'client-3': [],
+  'client-4': [],
+};
+
+const ICONS = {
+  site: <Home className="h-5 w-5 text-sky-500" />,
+  batiment: <Building className="h-5 w-5 text-orange-500" />,
+  niveau: <Layers className="h-5 w-5 text-indigo-500" />,
+  local: <DoorOpen className="h-5 w-5 text-green-500" />,
+  equipement: <Server className="h-5 w-5 text-slate-500" />,
+};
+
+const HIERARCHY_PLURALS = {
+    site: 'sites',
+    batiment: 'bâtiments',
+    niveau: 'niveaux',
+    local: 'locaux',
+    equipement: 'équipements',
+}
+
+const equipmentSchema = z.object({
+  // Localisation / Emplacement
+  zone: z.string().optional(),
+  reseau: z.string().optional(),
+  localisationPrecise: z.string().optional(),
+  localisationDetaillee: z.string().optional(),
+
+  // Options & Référentiels
+  inclureGMAO: z.boolean().default(true),
+  absentReferentiel: z.boolean().default(false),
+  inventaireP3: z.boolean().default(false),
+
+  // Identification
+  code: z.string().min(1, "Le code est requis."),
+  libelle: z.string().min(1, "Le libellé est requis."),
+  codeBIM: z.string().optional(),
+  numIdentification: z.string().optional(),
+  quantite: z.number().int().min(1).default(1),
+  qrCode: z.string().optional(),
+
+  // État & Statut
+  statut: z.enum(['En service', 'Hors service', 'Alerte', 'En veille']).default('En service'),
+  etatSante: z.enum(['Bon', 'Moyen', 'Mauvais', 'Critique']).default('Bon'),
+  equipementSensible: z.boolean().default(false),
+  
+  // Données GMAO
+  domaineGMAO: z.string().optional(),
+  famille: z.string().optional(),
+  sousFamille: z.string().optional(),
+
+  // Caractéristiques techniques
+  typeEquipement: z.string().min(1, "Le type d'équipement est requis."),
+  marque: z.string().optional(),
+  modele: z.string().optional(),
+  reference: z.string().optional(),
+  numeroSerie: z.string().optional(),
+  
+  // Ressources
+  photoUrl: z.string().url("URL de l'image non valide").optional().or(z.literal('')),
+  
+  // Domaine & Dates
+  domaineDate: z.string().optional(),
+  dateInstallation: z.string().optional(),
+  dateFinGarantie: z.string().optional(),
+  frequenceMaintenance: z.number().int().positive().optional(),
+});
+
+
+function EquipmentManager({ items, onUpdate, onDelete, onDuplicate, currentItem }) {
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [isGeneratingQr, setIsGeneratingQr] = useState(false);
+  const { toast } = useToast();
+
+  const filteredItems = useMemo(() => {
+    return items.filter(item => {
+      const searchMatch = (item.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+        (item.reference?.toLowerCase() || '').includes(searchTerm.toLowerCase());
+      
+      const statusMatch = statusFilter === 'all' || item.statut === statusFilter;
+
+      return searchMatch && statusMatch;
+    });
+  }, [items, searchTerm, statusFilter]);
+  
+  const form = useForm<z.infer<typeof equipmentSchema>>({
+    resolver: zodResolver(equipmentSchema),
+    defaultValues: {
+      zone: '', reseau: '', localisationPrecise: '', localisationDetaillee: '',
+      inclureGMAO: true, absentReferentiel: false, inventaireP3: false,
+      code: '', libelle: '', codeBIM: '', numIdentification: '', quantite: 1, qrCode: '',
+      statut: 'En service', etatSante: 'Bon', equipementSensible: false,
+      domaineGMAO: '', famille: '', sousFamille: '',
+      typeEquipement: '', marque: '', modele: '', reference: '', numeroSerie: '',
+      photoUrl: '',
+      domaineDate: '', dateInstallation: '', dateFinGarantie: '',
+    },
+  });
+
+  const handleGenerateQr = async () => {
+    const code = form.getValues('code');
+    if (!code) {
+        toast({
+            variant: "destructive",
+            title: "Code manquant",
+            description: "Veuillez d'abord saisir un code pour l'équipement.",
+        });
+        return;
+    }
+    setIsGeneratingQr(true);
+    try {
+        const result = await generateQrCode({ equipmentId: code });
+        form.setValue('qrCode', result.qrCodeDataUri);
+        toast({
+            title: "QR Code Généré",
+            description: "Le QR code a été généré avec succès.",
+        });
+    } catch (error) {
+        console.error("Error generating QR code:", error);
+        toast({
+            variant: "destructive",
+            title: "Erreur de génération",
+            description: "Impossible de générer le QR code.",
+        });
+    } finally {
+        setIsGeneratingQr(false);
+    }
+  }
+  
+  const onSubmit = (values: z.infer<typeof equipmentSchema>) => {
+    const newEquipment = {
+      id: `eq-${Date.now()}`, name: values.libelle, type: 'equipement', image: values.photoUrl, ...values,
+      domaineTechnique: values.domaineGMAO
+    };
+    onUpdate(newEquipment); // This should be an "add" function
+    form.reset();
+    setShowAddForm(false);
+  };
+  
+  return (
+    <div className="pt-2">
+      <Card>
+        <CardHeader>
+          <div className="flex justify-between items-center">
+             <CardTitle className="text-lg flex items-center gap-2">{ICONS.equipement} Équipements</CardTitle>
+             <Button size="sm" onClick={() => setShowAddForm(!showAddForm)}>
+               <PlusCircle className="mr-2"/>
+               {showAddForm ? 'Annuler' : 'Ajouter un équipement'}
+             </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+           {showAddForm && (
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 mb-6 p-4 border rounded-lg">
+                
+                <h3 className="text-xl font-semibold -mb-4">Informations de l'Équipement</h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                    {/* Section Localisation */}
+                    <div className="space-y-4 p-4 border rounded-md">
+                        <h4 className="font-medium text-lg border-b pb-2">Localisation / Emplacement</h4>
+                        <div className="grid grid-cols-2 gap-4">
+                            <FormItem>
+                                <FormLabel>Site</FormLabel>
+                                <Input disabled value={currentItem?.name || 'N/A'} />
+                            </FormItem>
+                             <FormField control={form.control} name="zone" render={({ field }) => (
+                                <FormItem><FormLabel>Zone</FormLabel><FormControl><Input placeholder="Ex: Atelier, Toiture..." {...field} /></FormControl><FormMessage /></FormItem>
+                            )}/>
+                            <FormField control={form.control} name="reseau" render={({ field }) => (
+                                <FormItem><FormLabel>Réseau</FormLabel><FormControl><Input placeholder="Ex: CVC-01" {...field} /></FormControl><FormMessage /></FormItem>
+                            )}/>
+                             <FormField control={form.control} name="localisationPrecise" render={({ field }) => (
+                                <FormItem><FormLabel>Localisation précise</FormLabel><FormControl><Input placeholder="Ex: Salle TGBT" {...field} /></FormControl><FormMessage /></FormItem>
+                            )}/>
+                             <FormField control={form.control} name="localisationDetaillee" render={({ field }) => (
+                                <FormItem className="col-span-2"><FormLabel>Localisation détaillée</FormLabel><FormControl><Input placeholder="Ex: Allée A, Rack 3" {...field} /></FormControl><FormMessage /></FormItem>
+                            )}/>
+                        </div>
+                    </div>
+
+                     {/* Section Options */}
+                    <div className="space-y-4 p-4 border rounded-md">
+                        <h4 className="font-medium text-lg border-b pb-2">Options & Référentiels</h4>
+                         <div className="space-y-3 pt-2">
+                            <FormField control={form.control} name="inclureGMAO" render={({ field }) => (
+                                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm"><div className="space-y-0.5"><FormLabel>À inclure dans la GMAO</FormLabel></div><FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem>
+                            )}/>
+                            <FormField control={form.control} name="absentReferentiel" render={({ field }) => (
+                                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm"><div className="space-y-0.5"><FormLabel>Absent du référentiel client</FormLabel></div><FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem>
+                            )}/>
+                            <FormField control={form.control} name="inventaireP3" render={({ field }) => (
+                                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm"><div className="space-y-0.5"><FormLabel>Dans inventaire P3</FormLabel></div><FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem>
+                            )}/>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Section Identification & Statut */}
+                <div className="space-y-4 p-4 border rounded-md">
+                    <h4 className="font-medium text-lg border-b pb-2">Identification & Statut</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        <FormField control={form.control} name="libelle" render={({ field }) => (
+                           <FormItem><FormLabel>Libellé *</FormLabel><FormControl><Input placeholder="Chaudière principale" {...field} /></FormControl><FormMessage /></FormItem>
+                        )}/>
+                        <FormField control={form.control} name="code" render={({ field }) => (
+                           <FormItem><FormLabel>Code *</FormLabel><FormControl><Input placeholder="CH-001" {...field} /></FormControl><FormMessage /></FormItem>
+                        )}/>
+                        <FormField control={form.control} name="codeBIM" render={({ field }) => (
+                           <FormItem><FormLabel>Code BIM</FormLabel><FormControl><Input placeholder="BIM-XYZ-001" {...field} /></FormControl></FormItem>
+                        )}/>
+                        <FormField control={form.control} name="numIdentification" render={({ field }) => (
+                           <FormItem><FormLabel>Numéro d'identification</FormLabel><FormControl><Input placeholder="ID-54321" {...field} /></FormControl></FormItem>
+                        )}/>
+                        <FormField control={form.control} name="quantite" render={({ field }) => (
+                           <FormItem><FormLabel>Quantité</FormLabel><FormControl><Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value, 10))}/></FormControl></FormItem>
+                        )}/>
+                        <FormField control={form.control} name="statut" render={({ field }) => (
+                           <FormItem><FormLabel>Statut *</FormLabel>
+                               <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                   <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                                   <SelectContent>
+                                       <SelectItem value="En service">En service</SelectItem>
+                                       <SelectItem value="Hors service">Hors service</SelectItem>
+                                       <SelectItem value="Alerte">Alerte</SelectItem>
+                                       <SelectItem value="En veille">En veille</SelectItem>
+                                   </SelectContent>
+                               </Select>
+                           </FormItem>
+                        )}/>
+                        <FormField control={form.control} name="etatSante" render={({ field }) => (
+                           <FormItem><FormLabel>État de santé</FormLabel>
+                               <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                   <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                                   <SelectContent>
+                                       <SelectItem value="Bon">Bon</SelectItem>
+                                       <SelectItem value="Moyen">Moyen</SelectItem>
+                                       <SelectItem value="Mauvais">Mauvais</SelectItem>
+                                       <SelectItem value="Critique">Critique</SelectItem>
+                                   </SelectContent>
+                               </Select>
+                           </FormItem>
+                        )}/>
+                         <FormField control={form.control} name="equipementSensible" render={({ field }) => (
+                            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm mt-5"><div className="space-y-0.5"><FormLabel>Équipement sensible</FormLabel></div><FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem>
+                        )}/>
+                    </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                    {/* Section Données GMAO */}
+                    <div className="space-y-4 p-4 border rounded-md">
+                        <h4 className="font-medium text-lg border-b pb-2">Données GMAO</h4>
+                        <div className="grid grid-cols-1 gap-4">
+                            <FormField control={form.control} name="domaineGMAO" render={({ field }) => (
+                                <FormItem><FormLabel>Domaine</FormLabel><FormControl><Input placeholder="CVC, Electricité..." {...field} /></FormControl><FormMessage /></FormItem>
+                            )}/>
+                            <FormField control={form.control} name="famille" render={({ field }) => (
+                                <FormItem><FormLabel>Famille</FormLabel><FormControl><Input placeholder="Ex: PPEB" {...field} /></FormControl></FormItem>
+                            )}/>
+                             <FormField control={form.control} name="sousFamille" render={({ field }) => (
+                                <FormItem><FormLabel>Sous-famille</FormLabel><FormControl><Input placeholder="Ex: Chaudière gaz" {...field} /></FormControl></FormItem>
+                            )}/>
+                        </div>
+                    </div>
+
+                    {/* Section Caractéristiques techniques */}
+                    <div className="space-y-4 p-4 border rounded-md">
+                        <h4 className="font-medium text-lg border-b pb-2">Caractéristiques techniques</h4>
+                         <div className="grid grid-cols-2 gap-4">
+                            <FormField control={form.control} name="typeEquipement" render={({ field }) => (
+                                <FormItem className="col-span-2"><FormLabel>Type équipement *</FormLabel><FormControl><Input placeholder="CTA, Chaudière..." {...field} /></FormControl><FormMessage /></FormItem>
+                            )}/>
+                            <FormField control={form.control} name="marque" render={({ field }) => (
+                                <FormItem><FormLabel>Marque</FormLabel><FormControl><Input placeholder="Siemens, Schneider..." {...field} /></FormControl></FormItem>
+                            )}/>
+                            <FormField control={form.control} name="modele" render={({ field }) => (
+                                <FormItem><FormLabel>Modèle</FormLabel><FormControl><Input placeholder="S7-1200" {...field} /></FormControl></FormItem>
+                            )}/>
+                            <FormField control={form.control} name="reference" render={({ field }) => (
+                                <FormItem><FormLabel>Référence</FormLabel><FormControl><Input placeholder="REF-001" {...field} /></FormControl></FormItem>
+                            )}/>
+                            <FormField control={form.control} name="numeroSerie" render={({ field }) => (
+                                <FormItem><FormLabel>Numéro de série</FormLabel><FormControl><Input placeholder="SN-ABC-123" {...field} /></FormControl></FormItem>
+                            )}/>
+                         </div>
+                    </div>
+                </div>
+                
+                 {/* Section Ressources & Dates */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                    <div className="space-y-4 p-4 border rounded-md">
+                         <h4 className="font-medium text-lg border-b pb-2">Ressources</h4>
+                         <FormField control={form.control} name="photoUrl" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Photo générale</FormLabel>
+                                <FormControl>
+                                    <div className="flex items-center gap-4">
+                                        <Input placeholder="https://..." {...field} />
+                                        <Button type="button" variant="outline"><UploadCloud className="mr-2"/>Uploader</Button>
+                                    </div>
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}/>
+                        <Separator />
+                        <div className="space-y-2">
+                             <Label>QR Code</Label>
+                             <div className="flex items-center gap-4">
+                                {form.watch('qrCode') ? (
+                                    <Image src={form.watch('qrCode')} alt="QR Code" width={80} height={80} className="rounded-md border p-1"/>
+                                ) : (
+                                    <div className="w-20 h-20 flex items-center justify-center bg-muted rounded-md text-muted-foreground">
+                                        <QrCode className="w-10 h-10"/>
+                                    </div>
+                                )}
+                                 <Button type="button" variant="outline" onClick={handleGenerateQr} disabled={isGeneratingQr}>
+                                     {isGeneratingQr ? <Loader2 className="mr-2 animate-spin" /> : <QrCode className="mr-2" />}
+                                     {form.watch('qrCode') ? 'Regénérer le QR Code' : 'Générer le QR Code'}
+                                </Button>
+                             </div>
+                             <FormField control={form.control} name="qrCode" render={({ field }) => (
+                                <FormItem className="hidden"><FormControl><Input {...field} /></FormControl></FormItem>
+                            )}/>
+                        </div>
+                    </div>
+                    <div className="space-y-4 p-4 border rounded-md">
+                         <h4 className="font-medium text-lg border-b pb-2">Domaine & Dates</h4>
+                          <div className="grid grid-cols-2 gap-4">
+                            <FormField control={form.control} name="domaineDate" render={({ field }) => (
+                                <FormItem><FormLabel>Domaine</FormLabel><FormControl><Input placeholder="Sélectionner un domaine" {...field} /></FormControl></FormItem>
+                            )}/>
+                            <FormField control={form.control} name="dateInstallation" render={({ field }) => (
+                                <FormItem><FormLabel>Date d'installation</FormLabel><FormControl><Input type="date" {...field} /></FormControl></FormItem>
+                            )}/>
+                            <FormField control={form.control} name="dateFinGarantie" render={({ field }) => (
+                                <FormItem><FormLabel>Garantie (fin)</FormLabel><FormControl><Input type="date" {...field} /></FormControl></FormItem>
+                            )}/>
+                             <FormField control={form.control} name="frequenceMaintenance" render={({ field }) => (
+                                <FormItem><FormLabel>Fréq. maintenance (jours)</FormLabel><FormControl><Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value, 10))}/></FormControl></FormItem>
+                            )}/>
+                          </div>
+                    </div>
+                </div>
+
+                <Separator />
+                <div className="flex justify-end gap-2">
+                   <Button type="button" variant="ghost" onClick={() => setShowAddForm(false)}>Annuler</Button>
+                   <Button type="submit">Enregistrer l'équipement</Button>
+                </div>
+              </form>
+            </Form>
+          )}
+
+          <div className="flex flex-col sm:flex-row gap-2 mb-4">
+            <div className="relative flex-grow">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder="Rechercher par libellé, référence..."
+                className="pl-8 sm:w-full"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-full sm:w-[180px]">
+                <SelectValue placeholder="Filtrer par statut" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tous les statuts</SelectItem>
+                <SelectItem value="En service">En service</SelectItem>
+                <SelectItem value="Alerte">Alerte</SelectItem>
+                <SelectItem value="Hors service">Hors service</SelectItem>
+                <SelectItem value="En veille">En veille</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button variant="outline" className="w-full sm:w-auto">
+              <ListFilter className="mr-2 h-4 w-4" />
+              Filtres
+            </Button>
+          </div>
+          
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader><TableRow>
+                  <TableHead className="w-[80px]">Image</TableHead><TableHead>Libellé / Référence</TableHead>
+                  <TableHead>Domaine</TableHead><TableHead>Marque</TableHead><TableHead>Statut</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+              </TableRow></TableHeader>
+              <TableBody>
+                {filteredItems?.length > 0 ? (
+                  filteredItems.map(eq => (
+                    <TableRow key={eq.id}>
+                      <TableCell><Image src={eq.image || 'https://placehold.co/60'} alt={eq.name} width={60} height={60} className="rounded-md object-cover" data-ai-hint="equipment"/></TableCell>
+                      <TableCell><div className="font-medium">{eq.name}</div><div className="text-sm text-muted-foreground">{eq.reference}</div></TableCell>
+                      <TableCell>{eq.domaineTechnique}</TableCell><TableCell>{eq.marque}</TableCell>
+                      <TableCell><Badge variant={eq.statut === 'En service' ? 'default' : eq.statut === 'Alerte' ? 'secondary' : 'destructive'}>{eq.statut}</Badge></TableCell>
+                      <TableCell className="text-right">
+                         <Button variant="ghost" size="icon" className="h-8 w-8" title="Consulter"><Eye className="w-4 h-4" /></Button>
+                         <Button variant="ghost" size="icon" className="h-8 w-8" title="Modifier"><Edit className="w-4 h-4" /></Button>
+                         <Button variant="ghost" size="icon" className="h-8 w-8" title="Dupliquer" onClick={() => onDuplicate(eq)}><Copy className="w-4 h-4" /></Button>
+                         <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" title="Supprimer" onClick={() => onDelete(eq.id)}><Trash2 className="w-4 h-4" /></Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : ( <TableRow><TableCell colSpan={6} className="text-center h-24">Aucun équipement.</TableCell></TableRow> )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function AddEditDialog({ item, itemType, onSave, trigger }) {
+  const [name, setName] = useState(item?.name || '');
+  const [image, setImage] = useState(item?.image || '');
+  const [isOpen, setIsOpen] = useState(false);
+  const isEditing = !!item;
+
+  const handleSave = () => {
+    onSave({ ...(item || {}), name, image });
+    setIsOpen(false);
+    setName('');
+    setImage('');
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>{trigger}</DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{isEditing ? 'Modifier' : 'Ajouter'} un {itemType}</DialogTitle>
+        </DialogHeader>
+        <div className="grid gap-4 py-4">
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="name" className="text-right">Nom</Label>
+            <Input id="name" value={name} onChange={(e) => setName(e.target.value)} className="col-span-3" placeholder={`Nom du ${itemType}`}/>
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="image" className="text-right">Image URL</Label>
+            <Input id="image" value={image} onChange={(e) => setImage(e.target.value)} className="col-span-3" placeholder="https://picsum.photos/400/300"/>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setIsOpen(false)}>Annuler</Button>
+          <Button onClick={handleSave}>{isEditing ? 'Sauvegarder' : 'Ajouter'}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+const HIERARCHY = ['site', 'batiment', 'niveau', 'local', 'equipement'];
+
+export default function HierarchyNavigator({ slug = [] }: { slug?: string[] }) {
+  const { selectedClient } = useContext(ClientContext);
+  const [treeData, setTreeData] = useState(initialTreeData);
+  const pathname = usePathname();
+
+  const { currentItem, itemsToList, parent, itemType } = useMemo(() => {
+    if (!selectedClient) return { currentItem: null, itemsToList: [], parent: null, itemType: 'site' };
+    
+    let currentItems = treeData[selectedClient.id] || [];
+    let currentParent = null;
+    let foundItem: any = null;
+
+    if (slug.length === 0) {
+        return { currentItem: null, itemsToList: currentItems, parent: null, itemType: 'site'};
+    }
+
+    for (let i = 0; i < slug.length; i++) {
+        const slugId = slug[i];
+        foundItem = currentItems.find(item => item.id === slugId);
+        if (foundItem) {
+            currentParent = foundItem;
+            currentItems = foundItem.children || [];
+        } else {
+            return { currentItem: null, itemsToList: [], parent: null, itemType: 'site' }; // Not found
+        }
+    }
+
+    const nextType = HIERARCHY[HIERARCHY.indexOf(foundItem.type) + 1];
+
+    return { currentItem: foundItem, itemsToList: currentItems, parent: currentParent, itemType: nextType };
+  }, [slug, selectedClient, treeData]);
+
+  const handleUpdate = (updatedItem) => {
+    if (!selectedClient) return;
+
+    const updateRecursively = (nodes, itemToUpdate) => {
+      return nodes.map(node => {
+        if (node.id === itemToUpdate.id) return itemToUpdate;
+        if (node.children) {
+          return { ...node, children: updateRecursively(node.children, itemToUpdate) };
+        }
+        return node;
+      });
+    };
+
+    setTreeData(prev => ({
+      ...prev,
+      [selectedClient.id]: updateRecursively(prev[selectedClient.id], updatedItem)
+    }));
+  };
+
+  const handleAdd = (newItemData) => {
+      if (!selectedClient) return;
+      const newItem = {
+        id: `${itemType}-${Date.now()}`,
+        name: newItemData.name,
+        type: itemType,
+        image: newItemData.image || `https://picsum.photos/seed/${newItemData.name.replace(/\s+/g, '')}/400/300`,
+        ...(itemType !== 'equipement' && { children: [] }),
+        ...newItemData
+      };
+
+      if (!currentItem) { // Adding a new site
+          setTreeData(prev => ({ ...prev, [selectedClient.id]: [...(prev[selectedClient.id] || []), newItem] }));
+      } else { // Adding a child to the current item
+          const newCurrentItem = {...currentItem, children: [...(currentItem.children || []), newItem]};
+          handleUpdate(newCurrentItem);
+      }
+  }
+
+  const handleDelete = (itemId) => {
+     if (!selectedClient) return;
+      const deleteRecursively = (nodes, idToDelete) => {
+          return nodes.filter(node => {
+              if (node.id === idToDelete) return false;
+              if (node.children) {
+                  node.children = deleteRecursively(node.children, idToDelete);
+              }
+              return true;
+          });
+      };
+      setTreeData(prev => ({
+          ...prev,
+          [selectedClient.id]: deleteRecursively(prev[selectedClient.id], itemId)
+      }))
+  }
+  
+  const handleDuplicate = (itemToDuplicate) => {
+    const newItem = {
+      ...itemToDuplicate,
+      id: `${itemToDuplicate.type}-${Date.now()}`,
+      name: `${itemToDuplicate.name} (copie)`,
+      code: `${itemToDuplicate.code}-copie`,
+    };
+    handleAdd(newItem);
+  }
+
+  if (!selectedClient) {
+    return (
+      <div className="p-4 sm:p-6">
+        <p className="text-muted-foreground">Veuillez sélectionner un client pour voir son arborescence.</p>
+      </div>
+    );
+  }
+  
+  const title = currentItem ? currentItem.name : `Arborescence de ${selectedClient.name}`;
+  const description = currentItem ? `Gestion des ${HIERARCHY_PLURALS[itemType] || 'éléments'} pour ${currentItem.name}` : "Gérez les sites, bâtiments, locaux et équipements de votre client.";
+
+  return (
+    <div className="p-4 sm:p-6 space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold tracking-tight font-headline">{title}</h2>
+        <p className="text-muted-foreground">{description}</p>
+      </div>
+      
+      {currentItem && (
+        <Card className="overflow-hidden">
+            <div className="relative h-48 w-full">
+                <Image src={currentItem.image || 'https://placehold.co/600x400'} alt={currentItem.name} fill objectFit="cover" data-ai-hint="building exterior"/>
+            </div>
+            <CardHeader>
+                <CardTitle className="text-xl flex items-center gap-2">{ICONS[currentItem.type]} {currentItem.name}</CardTitle>
+            </CardHeader>
+        </Card>
+      )}
+
+      {itemType !== 'equipement' ? (
+        <>
+            <div className="flex justify-between items-center">
+                <h3 className="text-xl font-semibold flex items-center gap-2">
+                    {ICONS[itemType]} Liste des {HIERARCHY_PLURALS[itemType]}
+                </h3>
+                <AddEditDialog
+                    item={null}
+                    itemType={itemType}
+                    onSave={handleAdd}
+                    trigger={<Button><PlusCircle className="mr-2"/>Ajouter un {itemType}</Button>}
+                />
+            </div>
+            {itemsToList.length > 0 ? (
+                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {itemsToList.map(item => (
+                    <Card key={item.id} className="group flex flex-col">
+                        <CardHeader className="relative p-0">
+                            <Link href={`${pathname}/${item.id}`} className="block">
+                                <Image src={item.image || 'https://placehold.co/400x300'} alt={item.name} width={400} height={300} className="rounded-t-lg object-cover aspect-[4/3]" data-ai-hint="building exterior"/>
+                            </Link>
+                             <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                               <AddEditDialog item={item} itemType={item.type} onSave={handleUpdate} trigger={<Button size="icon" className="h-8 w-8"><Edit/></Button>}/>
+                               <Button size="icon" variant="destructive" className="h-8 w-8" onClick={() => handleDelete(item.id)}><Trash2/></Button>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="p-4 flex-grow flex flex-col">
+                            <CardTitle className="text-lg mb-2">{item.name}</CardTitle>
+                            <div className="text-sm text-muted-foreground flex-grow">
+                                {item.children?.length || 0} {HIERARCHY_PLURALS[HIERARCHY[HIERARCHY.indexOf(item.type) + 1]]}
+                            </div>
+                            <Button asChild variant="outline" className="w-full mt-4">
+                                <Link href={`${pathname}/${item.id}`}>Gérer <ChevronRight className="ml-auto"/></Link>
+                            </Button>
+                        </CardContent>
+                    </Card>
+                    ))}
+                </div>
+            ) : (
+                <div className="text-center py-12 text-muted-foreground border-2 border-dashed rounded-lg">
+                    <p>Aucun {HIERARCHY_PLURALS[itemType]} pour le moment.</p>
+                    <AddEditDialog
+                        item={null}
+                        itemType={itemType}
+                        onSave={handleAdd}
+                        trigger={<Button variant="link" className="mt-2">Commencez par en ajouter un.</Button>}
+                    />
+                </div>
+            )}
+        </>
+      ) : (
+          <EquipmentManager 
+            items={itemsToList} 
+            onUpdate={handleAdd}
+            onDelete={handleDelete}
+            onDuplicate={handleDuplicate}
+            currentItem={currentItem}
+        />
+      )}
+    </div>
+  );
+}
+
+    

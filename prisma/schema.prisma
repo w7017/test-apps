@@ -1,0 +1,125 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Client {
+  id          String       @id @default(cuid())
+  name        String
+  description String?
+  sites       Site[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model Site {
+  id          String      @id @default(cuid())
+  name        String
+  image       String?
+  client      Client      @relation(fields: [clientId], references: [id])
+  clientId    String
+  buildings   Building[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model Building {
+  id        String    @id @default(cuid())
+  name      String
+  image     String?
+  site      Site      @relation(fields: [siteId], references: [id])
+  siteId    String
+  levels    Level[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Level {
+  id          String      @id @default(cuid())
+  name        String
+  image       String?
+  building    Building    @relation(fields: [buildingId], references: [id])
+  buildingId  String
+  locations   Location[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model Location {
+  id          String      @id @default(cuid())
+  name        String
+  image       String?
+  level       Level       @relation(fields: [levelId], references: [id])
+  levelId     String
+  equipments  Equipment[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model Equipment {
+  id                     String    @id @default(cuid())
+  code                   String    @unique
+  libelle                String
+  image                  String?
+  qrCode                 String?
+  location               Location  @relation(fields: [locationId], references: [id])
+  locationId             String
+  
+  // Champs additionnels
+  zone                   String?
+  reseau                 String?
+  localisationPrecise    String?
+  localisationDetaillee  String?
+  inclureGMAO            Boolean   @default(true)
+  absentReferentiel      Boolean   @default(false)
+  inventaireP3           Boolean   @default(false)
+  codeBIM                String?
+  numIdentification      String?
+  quantite               Int       @default(1)
+  statut                 String    @default("En service")
+  etatSante              String    @default("Bon")
+  equipementSensible     Boolean   @default(false)
+  domaineGMAO            String?
+  famille                String?
+  sousFamille            String?
+  typeEquipement         String?
+  marque                 String?
+  modele                 String?
+  reference              String?
+  numeroSerie            String?
+  photoUrl               String?
+  domaineDate            String?
+  dateInstallation       DateTime?
+  dateFinGarantie        DateTime?
+  frequenceMaintenance   Int?
+
+  audits                 Audit[]
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+}
+
+model Audit {
+  id             String        @id @default(cuid())
+  version        Int
+  equipment      Equipment     @relation(fields: [equipmentId], references: [id])
+  equipmentId    String
+  auditeur       String
+  statutGlobal   String
+  notesGlobales  String?
+  checklist      Json
+  photos         Json
+  date           DateTime      @default(now())
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@unique([equipmentId, version])
+}
+
+    

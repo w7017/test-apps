@@ -1,4 +1,5 @@
 // src/services/site.service.ts
+import prisma from "@/db/client";
 import { createSite, getAllSites, getSitesByClientId, getSiteById, updateSite, deleteSite } from "@/repositories/site.repository";
 import { Site } from "@prisma/client";
 
@@ -163,5 +164,71 @@ export const removeSite = async (id: string): Promise<Site> => {
   } catch (error) {
     console.error("Service: removeSite - Error:", error);
     throw error;
+  }
+};
+
+// Add this new function to your site.service.ts
+
+export const fetchSitesByClientIdWithFullHierarchy = async (clientId: string): Promise<Site[]> => {
+  try {
+    console.log("Service: fetchSitesByClientIdWithFullHierarchy - Starting with clientId:", clientId);
+    
+    // Validation
+    if (!clientId || typeof clientId !== "string") {
+      console.error("Service: fetchSitesByClientIdWithFullHierarchy - Invalid clientId:", clientId);
+      throw new Error("Client ID is required and must be a string.");
+    }
+    
+    if (clientId.trim().length === 0) {
+      console.error("Service: fetchSitesByClientIdWithFullHierarchy - Empty clientId after trim");
+      throw new Error("Client ID cannot be empty.");
+    }
+
+    console.log("Service: fetchSitesByClientIdWithFullHierarchy - Validation passed, calling repository");
+    const sites = await getSitesByClientIdWithFullHierarchy(clientId);
+    console.log("Service: fetchSitesByClientIdWithFullHierarchy - Success:", sites.length, "sites");
+    
+    return sites;
+  } catch (error) {
+    console.error("Service: fetchSitesByClientIdWithFullHierarchy - Error:", error);
+    throw error;
+  }
+};
+
+export const getSitesByClientIdWithFullHierarchy = async (clientId: string) => {
+  try {
+    console.log("Repository: getSitesByClientIdWithFullHierarchy - Starting with clientId:", clientId);
+    const sites = await prisma.site.findMany({
+      where: { clientId },
+      include: {
+        client: true,
+        buildings: {
+          include: {
+            levels: {
+              include: {
+                locations: {
+                  include: {
+                    equipments: {
+                      include: {
+                        audits: {
+                          orderBy: { version: 'desc' },
+                          take: 1 // Get only the latest audit
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+    console.log("Repository: getSitesByClientIdWithFullHierarchy - Success:", sites.length, "sites found");
+    return sites;
+  } catch (error) {
+    console.error("Repository: getSitesByClientIdWithFullHierarchy - Prisma error:", error);
+    throw new Error(`Database error: ${error.message}`);
   }
 };

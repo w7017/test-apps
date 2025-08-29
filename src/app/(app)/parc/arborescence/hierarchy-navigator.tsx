@@ -576,12 +576,109 @@ function AddEditDialog({ item, itemType, onSave, trigger }) {
   );
 }
 
-const HIERARCHY = ['site', 'batiment', 'niveau', 'local', 'equipement'];
+const HIERARCHY = ['site', 'building', 'level', 'location', 'equipment'];
+
+// Map French terms to database model names
+const MODEL_MAPPING = {
+  'site': 'site',
+  'batiment': 'building', 
+  'niveau': 'level',
+  'local': 'location',
+  'equipement': 'equipment'
+};
+
+// Transform database data to component format
+const transformDataToHierarchy = (sites) => {
+  return sites.map(site => ({
+    id: site.id,
+    name: site.name,
+    type: 'site',
+    image: site.image || `https://picsum.photos/seed/${site.name.replace(/\s+/g, '')}/400/300`,
+    children: site.buildings?.map(building => ({
+      id: building.id,
+      name: building.name,
+      type: 'building',
+      image: building.image || `https://picsum.photos/seed/${building.name.replace(/\s+/g, '')}/400/300`,
+      children: building.levels?.map(level => ({
+        id: level.id,
+        name: level.name,
+        type: 'level',
+        image: level.image || `https://picsum.photos/seed/${level.name.replace(/\s+/g, '')}/400/300`,
+        children: level.locations?.map(location => ({
+          id: location.id,
+          name: location.name,
+          type: 'location',
+          image: location.image || `https://picsum.photos/seed/${location.name.replace(/\s+/g, '')}/400/300`,
+          children: location.equipments?.map(equipment => ({
+            id: equipment.id,
+            name: equipment.libelle, // Use libelle as name for equipment
+            type: 'equipment',
+            code: equipment.code,
+            image: equipment.image || equipment.photoUrl || `https://picsum.photos/seed/${equipment.code}/400/300`,
+            // Include additional equipment data
+            ...equipment
+          })) || []
+        })) || []
+      })) || []
+    })) || []
+  }));
+};
 
 export default function HierarchyNavigator({ slug = [] }: { slug?: string[] }) {
   const { selectedClient } = useContext(ClientContext);
-  const [treeData, setTreeData] = useState(initialTreeData);
+  const [treeData, setTreeData] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const pathname = usePathname();
+
+  // Fetch sites with full hierarchy when selectedClient changes
+  useEffect(() => {
+    const fetchSitesWithHierarchy = async () => {
+      if (!selectedClient) {
+        setTreeData({});
+        return;
+      }
+
+      setLoading(true);
+      setError(null);
+
+      try {
+        console.log('Fetching sites with hierarchy for client:', selectedClient.id);
+        
+        // For now, we'll use the existing API endpoint
+        // TODO: Create a new endpoint that includes the full hierarchy
+        const response = await fetch(`/api/sites/client/${selectedClient.id}`);
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch sites: ${response.statusText}`);
+        }
+
+        const sites = await response.json();
+        console.log('Raw sites from API:', sites);
+        
+        // Transform the data to match component expectations
+        const transformedSites = transformDataToHierarchy(sites);
+        console.log('Transformed sites:', transformedSites);
+        
+        // Update treeData with the transformed sites
+        setTreeData(prev => ({
+          ...prev,
+          [selectedClient.id]: transformedSites
+        }));
+      } catch (err) {
+        console.error('Error fetching sites:', err);
+        setError(err.message || 'Failed to fetch sites');
+        setTreeData(prev => ({
+          ...prev,
+          [selectedClient.id]: []
+        }));
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSitesWithHierarchy();
+  }, [selectedClient]);
 
   const { currentItem, itemsToList, parent, itemType } = useMemo(() => {
     if (!selectedClient) return { currentItem: null, itemsToList: [], parent: null, itemType: 'site' };
@@ -605,7 +702,8 @@ export default function HierarchyNavigator({ slug = [] }: { slug?: string[] }) {
         }
     }
 
-    const nextType = HIERARCHY[HIERARCHY.indexOf(foundItem.type) + 1];
+    const currentTypeIndex = HIERARCHY.indexOf(foundItem.type);
+    const nextType = HIERARCHY[currentTypeIndex + 1];
 
     return { currentItem: foundItem, itemsToList: currentItems, parent: currentParent, itemType: nextType };
   }, [slug, selectedClient, treeData]);
@@ -629,24 +727,102 @@ export default function HierarchyNavigator({ slug = [] }: { slug?: string[] }) {
     }));
   };
 
-  const handleAdd = (newItemData) => {
-      if (!selectedClient) return;
-      const newItem = {
-        id: `${itemType}-${Date.now()}`,
+  const handleAddSite = async (newItemData) => {
+    if (!selectedClient) return;
+    
+    try {
+      setLoading(true);
+      
+      const siteData = {
         name: newItemData.name,
-        type: itemType,
-        image: newItemData.image || `https://picsum.photos/seed/${newItemData.name.replace(/\s+/g, '')}/400/300`,
-        ...(itemType !== 'equipement' && { children: [] }),
-        ...newItemData
+        image: newItemData.image,
+        clientId: selectedClient.id
       };
-
-      if (!currentItem) { // Adding a new site
-          setTreeData(prev => ({ ...prev, [selectedClient.id]: [...(prev[selectedClient.id] || []), newItem] }));
-      } else { // Adding a child to the current item
-          const newCurrentItem = {...currentItem, children: [...(currentItem.children || []), newItem]};
-          handleUpdate(newCurrentItem);
+      
+      console.log('Creating new site:', siteData);
+      
+      const response = await fetch('/api/sites', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(siteData),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create site');
       }
-  }
+      
+      const newSite = await response.json();
+      console.log('Site created successfully:', newSite);
+      
+      // Transform the new site to match component format
+      const transformedSite = {
+        id: newSite.id,
+        name: newSite.name,
+        type: 'site',
+        image: newSite.image || `https://picsum.photos/seed/${newSite.name.replace(/\s+/g, '')}/400/300`,
+        children: []
+      };
+      
+      // Add to local state
+      setTreeData(prev => ({
+        ...prev,
+        [selectedClient.id]: [...(prev[selectedClient.id] || []), transformedSite]
+      }));
+      
+      // Show success message (if you have toast)
+      // toast({ title: "Succès", description: "Site créé avec succès" });
+      
+    } catch (error) {
+      console.error('Error creating site:', error);
+      setError(error.message);
+      // Show error message (if you have toast)
+      // toast({ variant: "destructive", title: "Erreur", description: error.message });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAdd = async (newItemData) => {
+    if (!selectedClient) return;
+    
+    // For sites, use the API
+    if (itemType === 'site') {
+      await handleAddSite(newItemData);
+      return;
+    }
+    
+    // For other items, keep the existing logic
+    const newItem = {
+      id: `${itemType}-${Date.now()}`,
+      name: newItemData.name,
+      type: itemType,
+      image: newItemData.image || `https://picsum.photos/seed/${newItemData.name?.replace(/\s+/g, '') || 'default'}/400/300`,
+      ...(itemType !== 'equipment' && { children: [] }),
+      ...newItemData
+    };
+  
+    // For equipment, use libelle as name and ensure code is present
+    if (itemType === 'equipment') {
+      newItem.code = newItemData.code || `EQ-${Date.now()}`;
+      newItem.libelle = newItemData.name;
+    }
+  
+    if (!currentItem) {
+      // This case should only happen for sites now, which are handled above
+      console.warn('Unexpected case: adding item without currentItem for non-site type');
+      return;
+    } else {
+      // Adding a child to the current item
+      const newCurrentItem = {
+        ...currentItem, 
+        children: [...(currentItem.children || []), newItem]
+      };
+      handleUpdate(newCurrentItem);
+    }
+  };
 
   const handleDelete = (itemId) => {
      if (!selectedClient) return;
@@ -670,8 +846,14 @@ export default function HierarchyNavigator({ slug = [] }: { slug?: string[] }) {
       ...itemToDuplicate,
       id: `${itemToDuplicate.type}-${Date.now()}`,
       name: `${itemToDuplicate.name} (copie)`,
-      code: `${itemToDuplicate.code}-copie`,
     };
+    
+    // For equipment, handle code duplication
+    if (itemToDuplicate.type === 'equipment' && itemToDuplicate.code) {
+      newItem.code = `${itemToDuplicate.code}-copie`;
+      newItem.libelle = `${itemToDuplicate.libelle || itemToDuplicate.name} (copie)`;
+    }
+    
     handleAdd(newItem);
   }
 
@@ -682,9 +864,61 @@ export default function HierarchyNavigator({ slug = [] }: { slug?: string[] }) {
       </div>
     );
   }
+
+  if (loading) {
+    return (
+      <div className="p-4 sm:p-6 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Chargement des sites...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-4 sm:p-6">
+        <div className="bg-red-50 border border-red-200 rounded-md p-4">
+          <p className="text-red-800">Erreur lors du chargement des sites: {error}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="mt-2 text-red-600 underline hover:text-red-800"
+          >
+            Réessayer
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Get display names for French UI
+  const getDisplayType = (type) => {
+    const typeMap = {
+      'site': 'site',
+      'building': 'bâtiment',
+      'level': 'niveau', 
+      'location': 'local',
+      'equipment': 'équipement'
+    };
+    return typeMap[type] || type;
+  };
+
+  const getDisplayTypePlural = (type) => {
+    const typeMap = {
+      'site': 'sites',
+      'building': 'bâtiments',
+      'level': 'niveaux',
+      'location': 'locaux', 
+      'equipment': 'équipements'
+    };
+    return typeMap[type] || type;
+  };
   
   const title = currentItem ? currentItem.name : `Arborescence de ${selectedClient.name}`;
-  const description = currentItem ? `Gestion des ${HIERARCHY_PLURALS[itemType] || 'éléments'} pour ${currentItem.name}` : "Gérez les sites, bâtiments, locaux et équipements de votre client.";
+  const description = currentItem 
+    ? `Gestion des ${getDisplayTypePlural(itemType)} pour ${currentItem.name}` 
+    : "Gérez les sites, bâtiments, niveaux, locaux et équipements de votre client.";
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
@@ -696,25 +930,36 @@ export default function HierarchyNavigator({ slug = [] }: { slug?: string[] }) {
       {currentItem && (
         <Card className="overflow-hidden">
             <div className="relative h-48 w-full">
-                <Image src={currentItem.image || 'https://placehold.co/600x400'} alt={currentItem.name} fill objectFit="cover" data-ai-hint="building exterior"/>
+                <Image 
+                  src={currentItem.image || 'https://placehold.co/600x400'} 
+                  alt={currentItem.name} 
+                  fill 
+                  objectFit="cover" 
+                  data-ai-hint="building exterior"
+                />
             </div>
             <CardHeader>
-                <CardTitle className="text-xl flex items-center gap-2">{ICONS[currentItem.type]} {currentItem.name}</CardTitle>
+                <CardTitle className="text-xl flex items-center gap-2">
+                  {ICONS?.[currentItem.type]} {currentItem.name}
+                </CardTitle>
+                {currentItem.type === 'equipment' && currentItem.code && (
+                  <p className="text-sm text-muted-foreground">Code: {currentItem.code}</p>
+                )}
             </CardHeader>
         </Card>
       )}
 
-      {itemType !== 'equipement' ? (
+      {itemType !== 'equipment' ? (
         <>
             <div className="flex justify-between items-center">
                 <h3 className="text-xl font-semibold flex items-center gap-2">
-                    {ICONS[itemType]} Liste des {HIERARCHY_PLURALS[itemType]}
+                    {ICONS?.[itemType]} Liste des {getDisplayTypePlural(itemType)}
                 </h3>
                 <AddEditDialog
                     item={null}
                     itemType={itemType}
                     onSave={handleAdd}
-                    trigger={<Button><PlusCircle className="mr-2"/>Ajouter un {itemType}</Button>}
+                    trigger={<Button><PlusCircle className="mr-2"/>Ajouter un {getDisplayType(itemType)}</Button>}
                 />
             </div>
             {itemsToList.length > 0 ? (
@@ -723,20 +968,44 @@ export default function HierarchyNavigator({ slug = [] }: { slug?: string[] }) {
                     <Card key={item.id} className="group flex flex-col">
                         <CardHeader className="relative p-0">
                             <Link href={`${pathname}/${item.id}`} className="block">
-                                <Image src={item.image || 'https://placehold.co/400x300'} alt={item.name} width={400} height={300} className="rounded-t-lg object-cover aspect-[4/3]" data-ai-hint="building exterior"/>
+                                <Image 
+                                  src={item.image || 'https://placehold.co/400x300'} 
+                                  alt={item.name} 
+                                  width={400} 
+                                  height={300} 
+                                  className="rounded-t-lg object-cover aspect-[4/3]" 
+                                  data-ai-hint="building exterior"
+                                />
                             </Link>
                              <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                               <AddEditDialog item={item} itemType={item.type} onSave={handleUpdate} trigger={<Button size="icon" className="h-8 w-8"><Edit/></Button>}/>
-                               <Button size="icon" variant="destructive" className="h-8 w-8" onClick={() => handleDelete(item.id)}><Trash2/></Button>
+                               <AddEditDialog 
+                                 item={item} 
+                                 itemType={item.type} 
+                                 onSave={handleUpdate} 
+                                 trigger={<Button size="icon" className="h-8 w-8"><Edit/></Button>}
+                               />
+                               <Button 
+                                 size="icon" 
+                                 variant="destructive" 
+                                 className="h-8 w-8" 
+                                 onClick={() => handleDelete(item.id)}
+                               >
+                                 <Trash2/>
+                               </Button>
                             </div>
                         </CardHeader>
                         <CardContent className="p-4 flex-grow flex flex-col">
                             <CardTitle className="text-lg mb-2">{item.name}</CardTitle>
+                            {item.type === 'equipment' && item.code && (
+                              <p className="text-sm text-muted-foreground mb-2">Code: {item.code}</p>
+                            )}
                             <div className="text-sm text-muted-foreground flex-grow">
-                                {item.children?.length || 0} {HIERARCHY_PLURALS[HIERARCHY[HIERARCHY.indexOf(item.type) + 1]]}
+                                {item.children?.length || 0} {getDisplayTypePlural(HIERARCHY[HIERARCHY.indexOf(item.type) + 1])}
                             </div>
                             <Button asChild variant="outline" className="w-full mt-4">
-                                <Link href={`${pathname}/${item.id}`}>Gérer <ChevronRight className="ml-auto"/></Link>
+                                <Link href={`${pathname}/${item.id}`}>
+                                  Gérer <ChevronRight className="ml-auto"/>
+                                </Link>
                             </Button>
                         </CardContent>
                     </Card>
@@ -744,7 +1013,7 @@ export default function HierarchyNavigator({ slug = [] }: { slug?: string[] }) {
                 </div>
             ) : (
                 <div className="text-center py-12 text-muted-foreground border-2 border-dashed rounded-lg">
-                    <p>Aucun {HIERARCHY_PLURALS[itemType]} pour le moment.</p>
+                    <p>Aucun {getDisplayTypePlural(itemType)} pour le moment.</p>
                     <AddEditDialog
                         item={null}
                         itemType={itemType}

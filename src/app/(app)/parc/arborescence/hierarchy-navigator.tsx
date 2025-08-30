@@ -607,7 +607,128 @@ function AddEditDialog({ item, itemType, onSave, trigger }) {
           // Create new site - this is handled by the existing onSave
           onSave({ name: name.trim(), image: image.trim() });
         }
-      } else {
+      } 
+      // For buildings, use API calls
+      else if (itemType === 'building') {
+        if (isEditing) {
+          // Update existing building
+          const response = await fetch(`/api/buildings/${item.id}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              name: name.trim(),
+              image: image.trim() || null,
+            }),
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to update building');
+          }
+
+          const updatedBuilding = await response.json();
+          
+          // Transform and pass to parent component
+          const transformedBuilding = {
+            ...item,
+            name: updatedBuilding.name,
+            image: updatedBuilding.image || `https://picsum.photos/seed/${updatedBuilding.name.replace(/\s+/g, '')}/400/300`,
+          };
+          
+          onSave(transformedBuilding);
+          
+          toast({
+            title: "Succès",
+            description: "Bâtiment modifié avec succès.",
+          });
+        } else {
+          // Create new building - this is handled by the existing onSave
+          onSave({ name: name.trim(), image: image.trim() });
+        }
+      }
+      // For levels, use API calls
+      else if (itemType === 'level') {
+        if (isEditing) {
+          // Update existing level
+          const response = await fetch(`/api/levels/${item.id}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              name: name.trim(),
+              image: image.trim() || null,
+            }),
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to update level');
+          }
+
+          const updatedLevel = await response.json();
+          
+          // Transform and pass to parent component
+          const transformedLevel = {
+            ...item,
+            name: updatedLevel.name,
+            image: updatedLevel.image || `https://picsum.photos/seed/${updatedLevel.name.replace(/\s+/g, '')}/400/300`,
+          };
+          
+          onSave(transformedLevel);
+          
+          toast({
+            title: "Succès",
+            description: "Niveau modifié avec succès.",
+          });
+        } else {
+          // Create new level - this is handled by the existing onSave
+          onSave({ name: name.trim(), image: image.trim() });
+        }
+      }
+      // For locations, use API calls
+      else if (itemType === 'location') {
+        if (isEditing) {
+          // Update existing location
+          const response = await fetch(`/api/locations/${item.id}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              name: name.trim(),
+              image: image.trim() || null,
+            }),
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to update location');
+          }
+
+          const updatedLocation = await response.json();
+          
+          // Transform and pass to parent component
+          const transformedLocation = {
+            ...item,
+            name: updatedLocation.name,
+            image: updatedLocation.image || `https://picsum.photos/seed/${updatedLocation.name.replace(/\s+/g, '')}/400/300`,
+          };
+          
+          onSave(transformedLocation);
+          
+          toast({
+            title: "Succès",
+            description: "Local modifié avec succès.",
+          });
+        } else {
+          // Create new location - this is handled by the existing onSave
+          onSave({ name: name.trim(), image: image.trim() });
+        }
+      }
+      else {
         // For other item types, use existing logic
         onSave({ ...(item || {}), name: name.trim(), image: image.trim() });
       }
@@ -896,6 +1017,18 @@ export default function HierarchyNavigator({ slug = [] }: { slug?: string[] }) {
       return;
     }
     
+    // For levels, use the API
+    if (itemType === 'level') {
+      await handleAddLevel(newItemData);
+      return;
+    }
+    
+    // For locations, use the API
+    if (itemType === 'location') {
+      await handleAddLocation(newItemData);
+      return;
+    }
+    
     // For other items, keep the existing logic
     const newItem = {
       id: `${itemType}-${Date.now()}`,
@@ -1102,6 +1235,276 @@ const handleDeleteBuilding = async (buildingId) => {
   }
 };
 
+// Add level management functions
+const handleAddLevel = async (newItemData) => {
+  if (!selectedClient || !currentItem) return;
+  
+  try {
+    setLoading(true);
+    
+    const levelData = {
+      name: newItemData.name,
+      image: newItemData.image,
+      buildingId: currentItem.id // The current building
+    };
+    
+    console.log('Creating new level:', levelData);
+    
+    const response = await fetch('/api/levels', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(levelData),
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to create level');
+    }
+    
+    const newLevel = await response.json();
+    console.log('Level created successfully:', newLevel);
+    
+    // Transform the new level to match component format
+    const transformedLevel = {
+      id: newLevel.id,
+      name: newLevel.name,
+      type: 'level',
+      image: newLevel.image || `https://picsum.photos/seed/${newLevel.name.replace(/\s+/g, '')}/400/300`,
+      children: []
+    };
+    
+    // Add to current building's children
+    const updatedBuilding = {
+      ...currentItem,
+      children: [...(currentItem.children || []), transformedLevel]
+    };
+    
+    handleUpdate(updatedBuilding);
+    
+  } catch (error) {
+    console.error('Error creating level:', error);
+    setError(error.message);
+  } finally {
+    setLoading(false);
+  }
+};
+
+const handleEditLevel = async (updatedLevelData) => {
+  try {
+    setLoading(true);
+    
+    const response = await fetch(`/api/levels/${updatedLevelData.id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        name: updatedLevelData.name,
+        image: updatedLevelData.image,
+      }),
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to update level');
+    }
+    
+    const updatedLevel = await response.json();
+    console.log('Level updated successfully:', updatedLevel);
+    
+    // Update in the hierarchy
+    handleUpdate({
+      ...updatedLevelData,
+      name: updatedLevel.name,
+      image: updatedLevel.image
+    });
+    
+  } catch (error) {
+    console.error('Error updating level:', error);
+    setError(error.message);
+    throw error;
+  } finally {
+    setLoading(false);
+  }
+};
+
+const handleDeleteLevel = async (levelId) => {
+  try {
+    setLoading(true);
+    
+    const response = await fetch(`/api/levels/${levelId}`, {
+      method: 'DELETE',
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to delete level');
+    }
+    
+    console.log('Level deleted successfully');
+    
+    // Remove from local state
+    const deleteRecursively = (nodes, idToDelete) => {
+      return nodes.filter(node => {
+        if (node.id === idToDelete) return false;
+        if (node.children) {
+          node.children = deleteRecursively(node.children, idToDelete);
+        }
+        return true;
+      });
+    };
+    
+    setTreeData(prev => ({
+      ...prev,
+      [selectedClient.id]: deleteRecursively(prev[selectedClient.id], levelId)
+    }));
+    
+  } catch (error) {
+    console.error('Error deleting level:', error);
+    setError(error.message);
+    throw error;
+  } finally {
+    setLoading(false);
+  }
+};
+
+// Add location management functions
+const handleAddLocation = async (newItemData) => {
+  if (!selectedClient || !currentItem) return;
+  
+  try {
+    setLoading(true);
+    
+    const locationData = {
+      name: newItemData.name,
+      image: newItemData.image,
+      levelId: currentItem.id // The current level
+    };
+    
+    console.log('Creating new location:', locationData);
+    
+    const response = await fetch('/api/locations', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(locationData),
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to create location');
+    }
+    
+    const newLocation = await response.json();
+    console.log('Location created successfully:', newLocation);
+    
+    // Transform the new location to match component format
+    const transformedLocation = {
+      id: newLocation.id,
+      name: newLocation.name,
+      type: 'location',
+      image: newLocation.image || `https://picsum.photos/seed/${newLocation.name.replace(/\s+/g, '')}/400/300`,
+      children: []
+    };
+    
+    // Add to current level's children
+    const updatedLevel = {
+      ...currentItem,
+      children: [...(currentItem.children || []), transformedLocation]
+    };
+    
+    handleUpdate(updatedLevel);
+    
+  } catch (error) {
+    console.error('Error creating location:', error);
+    setError(error.message);
+  } finally {
+    setLoading(false);
+  }
+};
+
+const handleEditLocation = async (updatedLocationData) => {
+  try {
+    setLoading(true);
+    
+    const response = await fetch(`/api/locations/${updatedLocationData.id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        name: updatedLocationData.name,
+        image: updatedLocationData.image,
+      }),
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to update location');
+    }
+    
+    const updatedLocation = await response.json();
+    console.log('Location updated successfully:', updatedLocation);
+    
+    // Update in the hierarchy
+    handleUpdate({
+      ...updatedLocationData,
+      name: updatedLocation.name,
+      image: updatedLocation.image
+    });
+    
+  } catch (error) {
+    console.error('Error updating location:', error);
+    setError(error.message);
+    throw error;
+  } finally {
+    setLoading(false);
+  }
+};
+
+const handleDeleteLocation = async (locationId) => {
+  try {
+    setLoading(true);
+    
+    const response = await fetch(`/api/locations/${locationId}`, {
+      method: 'DELETE',
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to delete location');
+    }
+    
+    console.log('Location deleted successfully');
+    
+    // Remove from local state
+    const deleteRecursively = (nodes, idToDelete) => {
+      return nodes.filter(node => {
+        if (node.id === idToDelete) return false;
+        if (node.children) {
+          node.children = deleteRecursively(node.children, idToDelete);
+        }
+        return true;
+      });
+    };
+    
+    setTreeData(prev => ({
+      ...prev,
+      [selectedClient.id]: deleteRecursively(prev[selectedClient.id], locationId)
+    }));
+    
+  } catch (error) {
+    console.error('Error deleting location:', error);
+    setError(error.message);
+    throw error;
+  } finally {
+    setLoading(false);
+  }
+};
+
 const handleUpdateItem = async (updatedItem) => {
   if (!selectedClient) return;
 
@@ -1114,6 +1517,18 @@ const handleUpdateItem = async (updatedItem) => {
   // For buildings, use API call
   if (updatedItem.type === 'building') {
     await handleEditBuilding(updatedItem);
+    return;
+  }
+
+  // For levels, use API call
+  if (updatedItem.type === 'level') {
+    await handleEditLevel(updatedItem);
+    return;
+  }
+
+  // For locations, use API call
+  if (updatedItem.type === 'location') {
+    await handleEditLocation(updatedItem);
     return;
   }
 
@@ -1209,6 +1624,38 @@ function DeleteConfirmDialog({ item, itemType, onDelete, trigger }) {
           description: "Bâtiment supprimé avec succès.",
         });
       } 
+      // For levels, use API call
+      else if (itemType === 'level') {
+        const response = await fetch(`/api/levels/${item.id}`, {
+          method: 'DELETE',
+        });
+  
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to delete level');
+        }
+  
+        toast({
+          title: "Succès",
+          description: "Niveau supprimé avec succès.",
+        });
+      } 
+      // For locations, use API call
+      else if (itemType === 'location') {
+        const response = await fetch(`/api/locations/${item.id}`, {
+          method: 'DELETE',
+        });
+  
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to delete location');
+        }
+  
+        toast({
+          title: "Succès",
+          description: "Local supprimé avec succès.",
+        });
+      } 
       else {
         toast({
           title: "Succès",
@@ -1291,6 +1738,18 @@ const handleDeleteItem = async (itemId, itemType) => {
   // For buildings, use API call
   if (itemType === 'building') {
     await handleDeleteBuilding(itemId);
+    return;
+  }
+
+  // For levels, use API call
+  if (itemType === 'level') {
+    await handleDeleteLevel(itemId);
+    return;
+  }
+
+  // For locations, use API call
+  if (itemType === 'location') {
+    await handleDeleteLocation(itemId);
     return;
   }
 

@@ -1,18 +1,6 @@
 // src/services/building.service.ts
-import { createBuilding, getAllBuildings, getBuildingsBySiteId, getBuildingById, updateBuilding, deleteBuilding } from "@/repositories/building.repository";
-import { Building } from "@prisma/client";
-
-export const fetchAllBuildings = async (): Promise<Building[]> => {
-  try {
-    console.log("Service: fetchAllBuildings - Starting");
-    const buildings = await getAllBuildings();
-    console.log("Service: fetchAllBuildings - Success:", buildings.length, "buildings");
-    return buildings;
-  } catch (error) {
-    console.error("Service: fetchAllBuildings - Error:", error);
-    throw error;
-  }
-};
+import { getBuildingsBySiteId, getBuildingById, createBuilding, updateBuilding, deleteBuilding } from '@/repositories/building.repository';
+import { Building } from '@prisma/client';
 
 export const fetchBuildingsBySiteId = async (siteId: string): Promise<Building[]> => {
   try {

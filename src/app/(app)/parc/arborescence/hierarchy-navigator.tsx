@@ -78,6 +78,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
 import { generateQrCode } from '@/ai/flows/generate-qr-code';
 import { useToast } from '@/hooks/use-toast';
+import { AlertDialogHeader, AlertDialogFooter } from '@/components/ui/alert-dialog';
+import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogTitle, AlertDialogDescription, AlertDialogCancel, AlertDialogAction } from '@radix-ui/react-alert-dialog';
 
 // Mock data structure with images
 const initialTreeData = {
@@ -541,13 +543,88 @@ function AddEditDialog({ item, itemType, onSave, trigger }) {
   const [name, setName] = useState(item?.name || '');
   const [image, setImage] = useState(item?.image || '');
   const [isOpen, setIsOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
   const isEditing = !!item;
 
-  const handleSave = () => {
-    onSave({ ...(item || {}), name, image });
-    setIsOpen(false);
-    setName('');
-    setImage('');
+  // Reset form when item changes or dialog opens
+  useEffect(() => {
+    if (isOpen) {
+      setName(item?.name || '');
+      setImage(item?.image || '');
+    }
+  }, [item, isOpen]);
+
+  const handleSave = async () => {
+    if (!name.trim()) {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Le nom est requis.",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    
+    try {
+      // For sites, use API calls
+      if (itemType === 'site') {
+        if (isEditing) {
+          // Update existing site
+          const response = await fetch(`/api/sites/${item.id}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              name: name.trim(),
+              image: image.trim() || null,
+            }),
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to update site');
+          }
+
+          const updatedSite = await response.json();
+          
+          // Transform and pass to parent component
+          const transformedSite = {
+            ...item,
+            name: updatedSite.name,
+            image: updatedSite.image || `https://picsum.photos/seed/${updatedSite.name.replace(/\s+/g, '')}/400/300`,
+          };
+          
+          onSave(transformedSite);
+          
+          toast({
+            title: "Succès",
+            description: "Site modifié avec succès.",
+          });
+        } else {
+          // Create new site - this is handled by the existing onSave
+          onSave({ name: name.trim(), image: image.trim() });
+        }
+      } else {
+        // For other item types, use existing logic
+        onSave({ ...(item || {}), name: name.trim(), image: image.trim() });
+      }
+
+      setIsOpen(false);
+      setName('');
+      setImage('');
+    } catch (error) {
+      console.error('Error saving item:', error);
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: error.message || 'Une erreur est survenue lors de la sauvegarde.',
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -560,16 +637,35 @@ function AddEditDialog({ item, itemType, onSave, trigger }) {
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="name" className="text-right">Nom</Label>
-            <Input id="name" value={name} onChange={(e) => setName(e.target.value)} className="col-span-3" placeholder={`Nom du ${itemType}`}/>
+            <Input 
+              id="name" 
+              value={name} 
+              onChange={(e) => setName(e.target.value)} 
+              className="col-span-3" 
+              placeholder={`Nom du ${itemType}`}
+              disabled={isLoading}
+            />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="image" className="text-right">Image URL</Label>
-            <Input id="image" value={image} onChange={(e) => setImage(e.target.value)} className="col-span-3" placeholder="https://picsum.photos/400/300"/>
+            <Input 
+              id="image" 
+              value={image} 
+              onChange={(e) => setImage(e.target.value)} 
+              className="col-span-3" 
+              placeholder="https://picsum.photos/400/300"
+              disabled={isLoading}
+            />
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => setIsOpen(false)}>Annuler</Button>
-          <Button onClick={handleSave}>{isEditing ? 'Sauvegarder' : 'Ajouter'}</Button>
+          <Button variant="outline" onClick={() => setIsOpen(false)} disabled={isLoading}>
+            Annuler
+          </Button>
+          <Button onClick={handleSave} disabled={isLoading}>
+            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isEditing ? 'Sauvegarder' : 'Ajouter'}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -794,6 +890,12 @@ export default function HierarchyNavigator({ slug = [] }: { slug?: string[] }) {
       return;
     }
     
+    // For buildings, use the API
+    if (itemType === 'building') {
+      await handleAddBuilding(newItemData);
+      return;
+    }
+    
     // For other items, keep the existing logic
     const newItem = {
       id: `${itemType}-${Date.now()}`,
@@ -804,18 +906,15 @@ export default function HierarchyNavigator({ slug = [] }: { slug?: string[] }) {
       ...newItemData
     };
   
-    // For equipment, use libelle as name and ensure code is present
     if (itemType === 'equipment') {
       newItem.code = newItemData.code || `EQ-${Date.now()}`;
       newItem.libelle = newItemData.name;
     }
   
     if (!currentItem) {
-      // This case should only happen for sites now, which are handled above
       console.warn('Unexpected case: adding item without currentItem for non-site type');
       return;
     } else {
-      // Adding a child to the current item
       const newCurrentItem = {
         ...currentItem, 
         children: [...(currentItem.children || []), newItem]
@@ -823,6 +922,394 @@ export default function HierarchyNavigator({ slug = [] }: { slug?: string[] }) {
       handleUpdate(newCurrentItem);
     }
   };
+
+  const handleEditSite = async (updatedSiteData) => {
+    if (!selectedClient) return;
+    
+    try {
+      setLoading(true);
+      
+      const response = await fetch(`/api/sites/${updatedSiteData.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: updatedSiteData.name,
+          image: updatedSiteData.image,
+        }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update site');
+      }
+      
+      const updatedSite = await response.json();
+      console.log('Site updated successfully:', updatedSite);
+      
+      // Update local state
+      setTreeData(prev => ({
+        ...prev,
+        [selectedClient.id]: (prev[selectedClient.id] || []).map(site => 
+          site.id === updatedSite.id 
+            ? { ...site, name: updatedSite.name, image: updatedSite.image }
+            : site
+        )
+      }));
+      
+    } catch (error) {
+      console.error('Error updating site:', error);
+      setError(error.message);
+      throw error; // Re-throw to let AddEditDialog handle the toast
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Add after handleEditSite function
+const handleAddBuilding = async (newItemData) => {
+  if (!selectedClient || !currentItem) return;
+  
+  try {
+    setLoading(true);
+    
+    const buildingData = {
+      name: newItemData.name,
+      image: newItemData.image,
+      siteId: currentItem.id // The current site
+    };
+    
+    console.log('Creating new building:', buildingData);
+    
+    const response = await fetch('/api/buildings', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(buildingData),
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to create building');
+    }
+    
+    const newBuilding = await response.json();
+    console.log('Building created successfully:', newBuilding);
+    
+    // Transform the new building to match component format
+    const transformedBuilding = {
+      id: newBuilding.id,
+      name: newBuilding.name,
+      type: 'building',
+      image: newBuilding.image || `https://picsum.photos/seed/${newBuilding.name.replace(/\s+/g, '')}/400/300`,
+      children: []
+    };
+    
+    // Add to current site's children
+    const updatedSite = {
+      ...currentItem,
+      children: [...(currentItem.children || []), transformedBuilding]
+    };
+    
+    handleUpdate(updatedSite);
+    
+  } catch (error) {
+    console.error('Error creating building:', error);
+    setError(error.message);
+  } finally {
+    setLoading(false);
+  }
+};
+
+const handleEditBuilding = async (updatedBuildingData) => {
+  try {
+    setLoading(true);
+    
+    const response = await fetch(`/api/buildings/${updatedBuildingData.id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        name: updatedBuildingData.name,
+        image: updatedBuildingData.image,
+      }),
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to update building');
+    }
+    
+    const updatedBuilding = await response.json();
+    console.log('Building updated successfully:', updatedBuilding);
+    
+    // Update in the hierarchy
+    handleUpdate({
+      ...updatedBuildingData,
+      name: updatedBuilding.name,
+      image: updatedBuilding.image
+    });
+    
+  } catch (error) {
+    console.error('Error updating building:', error);
+    setError(error.message);
+    throw error;
+  } finally {
+    setLoading(false);
+  }
+};
+
+const handleDeleteBuilding = async (buildingId) => {
+  try {
+    setLoading(true);
+    
+    const response = await fetch(`/api/buildings/${buildingId}`, {
+      method: 'DELETE',
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to delete building');
+    }
+    
+    console.log('Building deleted successfully');
+    
+    // Remove from local state
+    const deleteRecursively = (nodes, idToDelete) => {
+      return nodes.filter(node => {
+        if (node.id === idToDelete) return false;
+        if (node.children) {
+          node.children = deleteRecursively(node.children, idToDelete);
+        }
+        return true;
+      });
+    };
+    
+    setTreeData(prev => ({
+      ...prev,
+      [selectedClient.id]: deleteRecursively(prev[selectedClient.id], buildingId)
+    }));
+    
+  } catch (error) {
+    console.error('Error deleting building:', error);
+    setError(error.message);
+    throw error;
+  } finally {
+    setLoading(false);
+  }
+};
+
+const handleUpdateItem = async (updatedItem) => {
+  if (!selectedClient) return;
+
+  // For sites, use API call
+  if (updatedItem.type === 'site') {
+    await handleEditSite(updatedItem);
+    return;
+  }
+
+  // For buildings, use API call
+  if (updatedItem.type === 'building') {
+    await handleEditBuilding(updatedItem);
+    return;
+  }
+
+  // For other items, use existing recursive update logic
+  const updateRecursively = (nodes, itemToUpdate) => {
+    return nodes.map(node => {
+      if (node.id === itemToUpdate.id) return itemToUpdate;
+      if (node.children) {
+        return { ...node, children: updateRecursively(node.children, itemToUpdate) };
+      }
+      return node;
+    });
+  };
+
+  setTreeData(prev => ({
+    ...prev,
+    [selectedClient.id]: updateRecursively(prev[selectedClient.id], updatedItem)
+  }));
+};
+
+  const handleDeleteSite = async (siteId) => {
+    if (!selectedClient) return;
+    
+    try {
+      setLoading(true);
+      
+      const response = await fetch(`/api/sites/${siteId}`, {
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete site');
+      }
+      
+      console.log('Site deleted successfully');
+      
+      // Remove from local state
+      setTreeData(prev => ({
+        ...prev,
+        [selectedClient.id]: (prev[selectedClient.id] || []).filter(site => site.id !== siteId)
+      }));
+      
+    } catch (error) {
+      console.error('Error deleting site:', error);
+      setError(error.message);
+      throw error; // Re-throw to let DeleteConfirmDialog handle the toast
+    } finally {
+      setLoading(false);
+    }
+  };
+
+// Replace the existing DeleteConfirmDialog function with this fixed version:
+
+function DeleteConfirmDialog({ item, itemType, onDelete, trigger }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+
+  const handleDelete = async () => {
+    setIsLoading(true);
+    
+    try {
+      // For sites, use API call
+      if (itemType === 'site') {
+        const response = await fetch(`/api/sites/${item.id}`, {
+          method: 'DELETE',
+        });
+  
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to delete site');
+        }
+  
+        toast({
+          title: "Succès",
+          description: "Site supprimé avec succès.",
+        });
+      } 
+      // For buildings, use API call
+      else if (itemType === 'building') {
+        const response = await fetch(`/api/buildings/${item.id}`, {
+          method: 'DELETE',
+        });
+  
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to delete building');
+        }
+  
+        toast({
+          title: "Succès",
+          description: "Bâtiment supprimé avec succès.",
+        });
+      } 
+      else {
+        toast({
+          title: "Succès",
+          description: `${itemType} supprimé avec succès.`,
+        });
+      }
+      
+      onDelete(item.id);
+      setIsOpen(false);
+    } catch (error) {
+      console.error('Error deleting item:', error);
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: error.message || 'Une erreur est survenue lors de la suppression.',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <div onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setIsOpen(true);
+        }}>
+          {trigger}
+        </div>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Confirmer la suppression</DialogTitle>
+        </DialogHeader>
+        <div className="py-4">
+          <p className="text-sm text-muted-foreground">
+            Êtes-vous sûr de vouloir supprimer "<span className="font-medium">{item?.name}</span>" ? 
+            {itemType === 'site' && (
+              <span className="block mt-2 text-destructive">
+                Tous les bâtiments, niveaux, locaux et équipements associés seront également supprimés.
+              </span>
+            )}
+            <span className="block mt-2 font-medium">Cette action est irréversible.</span>
+          </p>
+        </div>
+        <DialogFooter>
+          <Button 
+            variant="outline" 
+            onClick={() => setIsOpen(false)}
+            disabled={isLoading}
+          >
+            Annuler
+          </Button>
+          <Button 
+            variant="destructive"
+            onClick={handleDelete}
+            disabled={isLoading}
+          >
+            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Supprimer
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+  
+
+const handleDeleteItem = async (itemId, itemType) => {
+  if (!selectedClient) return;
+
+  // For sites, use API call
+  if (itemType === 'site') {
+    await handleDeleteSite(itemId);
+    return;
+  }
+
+  // For buildings, use API call
+  if (itemType === 'building') {
+    await handleDeleteBuilding(itemId);
+    return;
+  }
+
+  // For other items, use existing recursive delete logic
+  const deleteRecursively = (nodes, idToDelete) => {
+    return nodes.filter(node => {
+      if (node.id === idToDelete) return false;
+      if (node.children) {
+        node.children = deleteRecursively(node.children, idToDelete);
+      }
+      return true;
+    });
+  };
+  
+  setTreeData(prev => ({
+    ...prev,
+    [selectedClient.id]: deleteRecursively(prev[selectedClient.id], itemId)
+  }));
+};
 
   const handleDelete = (itemId) => {
      if (!selectedClient) return;
@@ -978,20 +1465,25 @@ export default function HierarchyNavigator({ slug = [] }: { slug?: string[] }) {
                                 />
                             </Link>
                              <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                               <AddEditDialog 
-                                 item={item} 
-                                 itemType={item.type} 
-                                 onSave={handleUpdate} 
-                                 trigger={<Button size="icon" className="h-8 w-8"><Edit/></Button>}
-                               />
-                               <Button 
-                                 size="icon" 
-                                 variant="destructive" 
-                                 className="h-8 w-8" 
-                                 onClick={() => handleDelete(item.id)}
-                               >
-                                 <Trash2/>
-                               </Button>
+                             <AddEditDialog 
+                                item={item} 
+                                itemType={item.type} 
+                                onSave={handleUpdateItem} 
+                                trigger={<Button size="icon" className="h-8 w-8"><Edit/></Button>}
+                              />
+                              <DeleteConfirmDialog
+                                item={item}
+                                itemType={item.type}
+                                onDelete={(itemId:any) => handleDeleteItem(itemId, item.type)}
+                                trigger={
+                                  <Button 
+                                    size="icon" 
+                                    variant="destructive" 
+                                    className="h-8 w-8"
+                                  >
+                                    <Trash2/>
+                                  </Button>
+                                } />
                             </div>
                         </CardHeader>
                         <CardContent className="p-4 flex-grow flex flex-col">
@@ -1024,13 +1516,13 @@ export default function HierarchyNavigator({ slug = [] }: { slug?: string[] }) {
             )}
         </>
       ) : (
-          <EquipmentManager 
-            items={itemsToList} 
-            onUpdate={handleAdd}
-            onDelete={handleDelete}
-            onDuplicate={handleDuplicate}
-            currentItem={currentItem}
-        />
+        <EquipmentManager 
+        items={itemsToList} 
+        onUpdate={handleAdd}
+        onDelete={(itemId) => handleDeleteItem(itemId, 'equipment')}
+        onDuplicate={handleDuplicate}
+        currentItem={currentItem}
+      />
       )}
     </div>
   );

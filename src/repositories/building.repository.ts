@@ -1,31 +1,11 @@
 // src/repositories/building.repository.ts
-import prisma from "@/db/client";
 
-export const getAllBuildings = async () => {
-  try {
-    console.log("Repository: getAllBuildings - Starting");
-    const buildings = await prisma.building.findMany({
-      include: {
-        site: {
-          include: {
-            client: true
-          }
-        },
-        levels: true
-      },
-      orderBy: { createdAt: 'desc' }
-    });
-    console.log("Repository: getAllBuildings - Success:", buildings.length, "buildings found");
-    return buildings;
-  } catch (error) {
-    console.error("Repository: getAllBuildings - Prisma error:", error);
-    throw new Error(`Database error: ${error.message}`);
-  }
-};
+import prisma from "@/db/client";
 
 export const getBuildingsBySiteId = async (siteId: string) => {
   try {
     console.log("Repository: getBuildingsBySiteId - Starting with siteId:", siteId);
+    
     const buildings = await prisma.building.findMany({
       where: { siteId },
       include: {
@@ -34,10 +14,19 @@ export const getBuildingsBySiteId = async (siteId: string) => {
             client: true
           }
         },
-        levels: true
+        levels: {
+          include: {
+            locations: {
+              include: {
+                equipments: true
+              }
+            }
+          }
+        }
       },
       orderBy: { createdAt: 'desc' }
     });
+    
     console.log("Repository: getBuildingsBySiteId - Success:", buildings.length, "buildings found");
     return buildings;
   } catch (error) {

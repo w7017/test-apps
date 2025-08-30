@@ -1,21 +1,6 @@
 // src/app/api/buildings/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { fetchAllBuildings, addBuilding } from "@/services/building.service";
-
-export async function GET() {
-  try {
-    console.log("GET /api/buildings - Starting");
-    const buildings = await fetchAllBuildings();
-    console.log("GET /api/buildings - Success:", buildings.length, "buildings found");
-    return NextResponse.json(buildings);
-  } catch (error) {
-    console.error("GET /api/buildings - Error:", error);
-    return NextResponse.json(
-      { error: error.message || "Failed to fetch buildings" },
-      { status: 500 }
-    );
-  }
-}
+import { addBuilding } from "@/services/building.service";
 
 export async function POST(req: NextRequest) {
   try {

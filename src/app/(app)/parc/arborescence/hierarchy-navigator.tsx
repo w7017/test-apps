@@ -142,6 +142,9 @@ const HIERARCHY_PLURALS = {
 }
 
 const equipmentSchema = z.object({
+  // ID for editing
+  id: z.string().optional(),
+  
   // Localisation / Emplacement
   zone: z.string().optional(),
   reseau: z.string().optional(),
@@ -194,6 +197,7 @@ function EquipmentManager({ items, onUpdate, onDelete, onDuplicate, currentItem 
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [isGeneratingQr, setIsGeneratingQr] = useState(false);
+  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
   const filteredItems = useMemo(() => {
@@ -250,15 +254,201 @@ function EquipmentManager({ items, onUpdate, onDelete, onDuplicate, currentItem 
         setIsGeneratingQr(false);
     }
   }
+
+  const handleEditEquipment = async (equipment) => {
+    try {
+      setLoading(true);
+      
+      // Pre-fill form with equipment data
+      form.reset({
+        id: equipment.id, // Set the ID for editing
+        zone: equipment.zone || '',
+        reseau: equipment.reseau || '',
+        localisationPrecise: equipment.localisationPrecise || '',
+        localisationDetaillee: equipment.localisationDetaillee || '',
+        inclureGMAO: equipment.inclureGMAO ?? true,
+        absentReferentiel: equipment.absentReferentiel ?? false,
+        inventaireP3: equipment.inventaireP3 ?? false,
+        code: equipment.code || '',
+        libelle: equipment.libelle || equipment.name || '',
+        codeBIM: equipment.codeBIM || '',
+        numIdentification: equipment.numIdentification || '',
+        quantite: equipment.quantite || 1,
+        qrCode: equipment.qrCode || '',
+        statut: equipment.statut || 'En service',
+        etatSante: equipment.etatSante || 'Bon',
+        equipementSensible: equipment.equipementSensible ?? false,
+        domaineGMAO: equipment.domaineGMAO || '',
+        famille: equipment.famille || '',
+        sousFamille: equipment.sousFamille || '',
+        typeEquipement: equipment.typeEquipement || '',
+        marque: equipment.marque || '',
+        modele: equipment.modele || '',
+        reference: equipment.reference || '',
+        numeroSerie: equipment.numeroSerie || '',
+        photoUrl: equipment.photoUrl || equipment.image || '',
+        domaineDate: equipment.domaineDate || '',
+        dateInstallation: equipment.dateInstallation ? new Date(equipment.dateInstallation).toISOString().split('T')[0] : '',
+        dateFinGarantie: equipment.dateFinGarantie ? new Date(equipment.dateFinGarantie).toISOString().split('T')[0] : '',
+        frequenceMaintenance: equipment.frequenceMaintenance || undefined
+      });
+      
+      setShowAddForm(true);
+      
+    } catch (error) {
+      console.error('Error preparing edit form:', error);
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Impossible de charger les données de l'équipement.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteEquipment = async (equipmentId) => {
+    if (!confirm("Êtes-vous sûr de vouloir supprimer cet équipement ?")) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      
+      const response = await fetch(`/api/equipments/${equipmentId}`, {
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete equipment');
+      }
+      
+      console.log('Equipment deleted successfully');
+      
+      // Remove from local state
+      onDelete(equipmentId);
+      
+      toast({
+        title: "Succès",
+        description: "Équipement supprimé avec succès.",
+      });
+      
+    } catch (error) {
+      console.error('Error deleting equipment:', error);
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: error.message || 'Impossible de supprimer l\'équipement.',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
   
-  const onSubmit = (values: z.infer<typeof equipmentSchema>) => {
-    const newEquipment = {
-      id: `eq-${Date.now()}`, name: values.libelle, type: 'equipement', image: values.photoUrl, ...values,
-      domaineTechnique: values.domaineGMAO
-    };
-    onUpdate(newEquipment); // This should be an "add" function
-    form.reset();
-    setShowAddForm(false);
+  const onSubmit = async (values: z.infer<typeof equipmentSchema>) => {
+    try {
+      setLoading(true);
+      
+      // Prepare equipment data for API
+      const equipmentData = {
+        code: values.code,
+        libelle: values.libelle,
+        image: values.photoUrl,
+        qrCode: values.qrCode,
+        locationId: currentItem?.id, // Current location ID
+        zone: values.zone,
+        reseau: values.reseau,
+        localisationPrecise: values.localisationPrecise,
+        localisationDetaillee: values.localisationDetaillee,
+        inclureGMAO: values.inclureGMAO,
+        absentReferentiel: values.absentReferentiel,
+        inventaireP3: values.inventaireP3,
+        codeBIM: values.codeBIM,
+        numIdentification: values.numIdentification,
+        quantite: values.quantite,
+        statut: values.statut,
+        etatSante: values.etatSante,
+        equipementSensible: values.equipementSensible,
+        domaineGMAO: values.domaineGMAO,
+        famille: values.famille,
+        sousFamille: values.sousFamille,
+        typeEquipement: values.typeEquipement,
+        marque: values.marque,
+        modele: values.modele,
+        reference: values.reference,
+        numeroSerie: values.numeroSerie,
+        domaineDate: values.domaineDate,
+        dateInstallation: values.dateInstallation ? new Date(values.dateInstallation).toISOString() : undefined,
+        dateFinGarantie: values.dateFinGarantie ? new Date(values.dateFinGarantie).toISOString() : undefined,
+        frequenceMaintenance: values.frequenceMaintenance
+      };
+      
+      // Check if we're editing an existing equipment (if form has an ID)
+      const isEditing = form.getValues('id');
+      
+      let response;
+      if (isEditing) {
+        console.log('Updating equipment:', equipmentData);
+        response = await fetch(`/api/equipments/${isEditing}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(equipmentData),
+        });
+      } else {
+        console.log('Creating new equipment:', equipmentData);
+        response = await fetch('/api/equipments', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(equipmentData),
+        });
+      }
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Failed to ${isEditing ? 'update' : 'create'} equipment`);
+      }
+      
+      const result = await response.json();
+      console.log(`Equipment ${isEditing ? 'updated' : 'created'} successfully:`, result);
+      
+      // Transform for local state
+      const transformedEquipment = {
+        id: result.data.id,
+        name: result.data.libelle,
+        type: 'equipement',
+        code: result.data.code,
+        image: result.data.image || result.data.photoUrl || `https://picsum.photos/seed/${result.data.code}/200/200`,
+        reference: result.data.reference,
+        domaineTechnique: result.data.domaineGMAO,
+        statut: result.data.statut,
+        marque: result.data.marque,
+        ...result.data
+      };
+      
+      onUpdate(transformedEquipment);
+      form.reset();
+      setShowAddForm(false);
+      
+      toast({
+        title: "Succès",
+        description: `Équipement ${isEditing ? 'modifié' : 'créé'} avec succès.`,
+      });
+      
+    } catch (error) {
+      console.error(`Error ${form.getValues('id') ? 'updating' : 'creating'} equipment:`, error);
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: error.message || 'Une erreur est survenue lors de la sauvegarde.',
+      });
+    } finally {
+      setLoading(false);
+    }
   };
   
   return (
@@ -278,7 +468,9 @@ function EquipmentManager({ items, onUpdate, onDelete, onDuplicate, currentItem 
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 mb-6 p-4 border rounded-lg">
                 
-                <h3 className="text-xl font-semibold -mb-4">Informations de l'Équipement</h3>
+                <h3 className="text-xl font-semibold -mb-4">
+                  {form.getValues('id') ? 'Modifier l\'Équipement' : 'Informations de l\'Équipement'}
+                </h3>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                     {/* Section Localisation */}
@@ -471,7 +663,10 @@ function EquipmentManager({ items, onUpdate, onDelete, onDuplicate, currentItem 
                 <Separator />
                 <div className="flex justify-end gap-2">
                    <Button type="button" variant="ghost" onClick={() => setShowAddForm(false)}>Annuler</Button>
-                   <Button type="submit">Enregistrer l'équipement</Button>
+                   <Button type="submit" disabled={loading}>
+                     {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                     {form.getValues('id') ? 'Modifier l\'équipement' : 'Enregistrer l\'équipement'}
+                   </Button>
                 </div>
               </form>
             </Form>
@@ -523,9 +718,25 @@ function EquipmentManager({ items, onUpdate, onDelete, onDuplicate, currentItem 
                       <TableCell><Badge variant={eq.statut === 'En service' ? 'default' : eq.statut === 'Alerte' ? 'secondary' : 'destructive'}>{eq.statut}</Badge></TableCell>
                       <TableCell className="text-right">
                          <Button variant="ghost" size="icon" className="h-8 w-8" title="Consulter"><Eye className="w-4 h-4" /></Button>
-                         <Button variant="ghost" size="icon" className="h-8 w-8" title="Modifier"><Edit className="w-4 h-4" /></Button>
+                         <Button 
+                           variant="ghost" 
+                           size="icon" 
+                           className="h-8 w-8" 
+                           title="Modifier"
+                           onClick={() => handleEditEquipment(eq)}
+                         >
+                           <Edit className="w-4 h-4" />
+                         </Button>
                          <Button variant="ghost" size="icon" className="h-8 w-8" title="Dupliquer" onClick={() => onDuplicate(eq)}><Copy className="w-4 h-4" /></Button>
-                         <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" title="Supprimer" onClick={() => onDelete(eq.id)}><Trash2 className="w-4 h-4" /></Button>
+                         <Button 
+                           variant="ghost" 
+                           size="icon" 
+                           className="h-8 w-8 text-destructive" 
+                           title="Supprimer" 
+                           onClick={() => handleDeleteEquipment(eq.id)}
+                         >
+                           <Trash2 className="w-4 h-4" />
+                         </Button>
                       </TableCell>
                     </TableRow>
                   ))

@@ -23,40 +23,89 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     console.log("POST /api/equipments - Body received:", body);
     
-    // Validate required fields
-    if (!body.code) {
-      console.error("POST /api/equipments - Missing code field");
-      return NextResponse.json(
-        { error: "Code is required" },
-        { status: 400 }
-      );
+    // Enhanced validation
+    const validationErrors: string[] = [];
+    
+    // Required fields validation
+    if (!body.code || typeof body.code !== 'string' || body.code.trim().length === 0) {
+      validationErrors.push("Code is required and must be a non-empty string");
     }
-
-    if (!body.libelle) {
-      console.error("POST /api/equipments - Missing libelle field");
-      return NextResponse.json(
-        { error: "Libelle is required" },
-        { status: 400 }
-      );
+    
+    if (!body.libelle || typeof body.libelle !== 'string' || body.libelle.trim().length === 0) {
+      validationErrors.push("Libelle is required and must be a non-empty string");
     }
-
-    if (!body.locationId) {
-      console.error("POST /api/equipments - Missing locationId field");
+    
+    if (!body.locationId || typeof body.locationId !== 'string' || body.locationId.trim().length === 0) {
+      validationErrors.push("Location ID is required and must be a non-empty string");
+    }
+    
+    // Optional field validation
+    if (body.quantite !== undefined && (typeof body.quantite !== 'number' || body.quantite < 1)) {
+      validationErrors.push("Quantite must be a positive number if provided");
+    }
+    
+    if (body.frequenceMaintenance !== undefined && (typeof body.frequenceMaintenance !== 'number' || body.frequenceMaintenance < 1)) {
+      validationErrors.push("Frequence maintenance must be a positive number if provided");
+    }
+    
+    // Date validation
+    if (body.dateInstallation && isNaN(Date.parse(body.dateInstallation))) {
+      validationErrors.push("Date installation must be a valid date");
+    }
+    
+    if (body.dateFinGarantie && isNaN(Date.parse(body.dateFinGarantie))) {
+      validationErrors.push("Date fin garantie must be a valid date");
+    }
+    
+    if (validationErrors.length > 0) {
+      console.error("POST /api/equipments - Validation errors:", validationErrors);
       return NextResponse.json(
-        { error: "Location ID is required" },
+        { 
+          error: "Validation failed", 
+          details: validationErrors 
+        },
         { status: 400 }
       );
     }
     
-    console.log("POST /api/equipments - Calling addEquipment service");
+    console.log("POST /api/equipments - Validation passed, calling addEquipment service");
     const newEquipment = await addEquipment(body);
     console.log("POST /api/equipments - Success:", newEquipment);
     
-    return NextResponse.json(newEquipment, { status: 201 });
+    return NextResponse.json({
+      success: true,
+      message: "Equipment created successfully",
+      data: newEquipment
+    }, { status: 201 });
   } catch (error: any) {
     console.error("POST /api/equipments - Error:", error);
+    
+    // Handle specific Prisma errors
+    if (error.message?.includes('already exists')) {
+      return NextResponse.json(
+        { 
+          error: "Equipment with this code already exists",
+          code: "DUPLICATE_CODE"
+        },
+        { status: 409 }
+      );
+    }
+    
+    if (error.message?.includes('not found')) {
+      return NextResponse.json(
+        { 
+          error: "Location not found",
+          code: "LOCATION_NOT_FOUND"
+        },
+        { status: 404 }
+      );
+    }
+    
     return NextResponse.json(
-      { error: error.message || "An error occurred" },
+      { 
+        error: error.message || "An error occurred while creating equipment",
+        code: "INTERNAL_ERROR"
+      },
       { status: 500 }
     );
   }

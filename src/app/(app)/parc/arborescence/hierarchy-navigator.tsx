@@ -430,8 +430,19 @@ function EquipmentManager({ items, onUpdate, onDelete, onDuplicate, currentItem 
         ...result.data
       };
       
+      // Update or add equipment in the hierarchy
       onUpdate(transformedEquipment);
-      form.reset();
+      
+      form.reset({
+        zone: '', reseau: '', localisationPrecise: '', localisationDetaillee: '',
+        inclureGMAO: true, absentReferentiel: false, inventaireP3: false,
+        code: '', libelle: '', codeBIM: '', numIdentification: '', quantite: 1, qrCode: '',
+        statut: 'En service', etatSante: 'Bon', equipementSensible: false,
+        domaineGMAO: '', famille: '', sousFamille: '',
+        typeEquipement: '', marque: '', modele: '', reference: '', numeroSerie: '',
+        photoUrl: '',
+        domaineDate: '', dateInstallation: '', dateFinGarantie: '',
+      });
       setShowAddForm(false);
       
       toast({
@@ -2014,6 +2025,52 @@ const handleDeleteItem = async (itemId, itemType) => {
     handleAdd(newItem);
   }
 
+  const handleUpdateEquipment = (updatedEquipment) => {
+    if (!selectedClient) return;
+
+    // Check if this is a new equipment (no existing ID in the hierarchy)
+    const isNewEquipment = !itemsToList.find(item => item.id === updatedEquipment.id);
+
+    if (isNewEquipment) {
+      // Add new equipment to current location
+      const addToCurrentLocation = (nodes, targetLocationId) => {
+        return nodes.map(node => {
+          if (node.id === targetLocationId) {
+            return {
+              ...node,
+              children: [...(node.children || []), updatedEquipment]
+            };
+          }
+          if (node.children) {
+            return { ...node, children: addToCurrentLocation(node.children, targetLocationId) };
+          }
+          return node;
+        });
+      };
+
+      setTreeData(prev => ({
+        ...prev,
+        [selectedClient.id]: addToCurrentLocation(prev[selectedClient.id], currentItem?.id)
+      }));
+    } else {
+      // Update existing equipment
+      const updateRecursively = (nodes, itemToUpdate) => {
+        return nodes.map(node => {
+          if (node.id === itemToUpdate.id) return itemToUpdate;
+          if (node.children) {
+            return { ...node, children: updateRecursively(node.children, itemToUpdate) };
+          }
+          return node;
+        });
+      };
+
+      setTreeData(prev => ({
+        ...prev,
+        [selectedClient.id]: updateRecursively(prev[selectedClient.id], updatedEquipment)
+      }));
+    }
+  };
+
   if (!selectedClient) {
     return (
       <div className="p-4 sm:p-6">
@@ -2188,7 +2245,7 @@ const handleDeleteItem = async (itemId, itemType) => {
       ) : (
         <EquipmentManager 
         items={itemsToList} 
-        onUpdate={handleAdd}
+        onUpdate={handleUpdateEquipment}
         onDelete={(itemId) => handleDeleteItem(itemId, 'equipment')}
         onDuplicate={handleDuplicate}
         currentItem={currentItem}

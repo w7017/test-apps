@@ -1,7 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { FileText, Presentation } from "lucide-react";
+import { FileText, Presentation, ListChecks, FileSpreadsheet } from "lucide-react";
 
 export default function LivrablesPage() {
   return (
@@ -63,6 +63,52 @@ export default function LivrablesPage() {
               <Link href="/audits/livrables/presentation-ia">
                 Générer une Présentation
               </Link>
+            </Button>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+             <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <ListChecks className="h-6 w-6" />
+              </div>
+              <div>
+                <CardTitle>Liste des actions</CardTitle>
+                <CardDescription>
+                  Extrayez et suivez les actions correctives.
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+             <p className="text-sm text-muted-foreground mb-4">
+              Générez une liste claire des actions à mener suite à un audit, pour un suivi efficace et une résolution rapide des problèmes identifiés.
+            </p>
+            <Button>
+              Voir la liste
+            </Button>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+             <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <FileSpreadsheet className="h-6 w-6" />
+              </div>
+              <div>
+                <CardTitle>Import liste des équipements</CardTitle>
+                <CardDescription>
+                  Intégrez vos équipements depuis un fichier Excel.
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+             <p className="text-sm text-muted-foreground mb-4">
+              Importez rapidement toute votre liste d'équipements dans la plateforme à partir d'un simple fichier Excel pour une mise en place rapide.
+            </p>
+            <Button>
+                Importer
             </Button>
           </CardContent>
         </Card>

@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -51,6 +50,7 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
+  SidebarSeparator,
 } from '@/components/ui/sidebar';
 import { Icons } from '@/components/icons';
 import { cn } from '@/lib/utils';
@@ -214,76 +214,89 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <SidebarMenu>
                 <SidebarMenuItem>
                     <SidebarMenuButton asChild isActive={pathname === '/dashboard'}>
-                        <Link href="/dashboard"><Home /><span>Dashboard</span></Link>
+                        <Link href="/dashboard" className="flex items-center gap-2">
+                            <Home className="size-4" />
+                            <span>Dashboard</span>
+                        </Link>
                     </SidebarMenuButton>
                 </SidebarMenuItem>
             </SidebarMenu>
           </div>
+          
+          <SidebarSeparator className="mx-2" />
+          
           <Accordion type="multiple" defaultValue={['Parc', 'Audits', 'Préparation GMAO']} className="w-full">
-            {navItems.map((group) => (
-                group.items ? (
-                    <AccordionItem value={group.title} key={group.title} className="border-none">
-                        <AccordionTrigger className="px-2 py-1.5 text-sm hover:no-underline hover:bg-sidebar-accent rounded-md text-sidebar-foreground/80 font-medium [&[data-state=open]>svg]:text-accent-foreground">
-                            <div className="flex items-center gap-2">
-                                <group.icon className="size-4" />
-                                <span>{group.title}</span>
-                            </div>
-                        </AccordionTrigger>
-                        <AccordionContent className="pt-1 pl-5">
-                            <SidebarMenu>
-                            {group.items.map((item) => (
-                                item.items ? (
-                                    <Accordion key={item.label} type="single" collapsible className="w-full">
-                                        <AccordionItem value={item.label} className="border-none">
-                                             <AccordionTrigger className="px-2 py-1.5 text-sm hover:no-underline hover:bg-sidebar-accent rounded-md text-sidebar-foreground/80 [&[data-state=open]>svg]:text-accent-foreground">
-                                                <div className="flex items-center gap-2">
-                                                    {item.icon && <item.icon className="size-4" />}
-                                                    <span>{item.label}</span>
-                                                </div>
-                                             </AccordionTrigger>
-                                             <AccordionContent className="pt-1 pl-5">
-                                                <SidebarMenu>
-                                                {item.items.map(subItem => (
-                                                    <SidebarMenuItem key={subItem.href}>
-                                                        <SidebarMenuButton asChild isActive={pathname === subItem.href} size="sm" className="justify-start">
-                                                            <Link href={subItem.href}>
-                                                                <span className="pl-1">{subItem.label}</span>
-                                                            </Link>
-                                                        </SidebarMenuButton>
-                                                    </SidebarMenuItem>
-                                                ))}
-                                                </SidebarMenu>
-                                             </AccordionContent>
-                                        </AccordionItem>
-                                    </Accordion>
-                                ) : (
-                                    <SidebarMenuItem key={item.href}>
-                                        <SidebarMenuButton asChild isActive={pathname.startsWith(item.href!)} size="sm" className="justify-start">
-                                            <Link href={item.href!}>
-                                                {item.icon && <item.icon className="size-4" />}
-                                                <span>{item.label}</span>
-                                            </Link>
-                                        </SidebarMenuButton>
-                                    </SidebarMenuItem>
-                                )
-                            ))}
+            {navItems.map((group, groupIndex) => (
+                <React.Fragment key={group.title}>
+                    {group.items ? (
+                        <AccordionItem value={group.title} className="border-none">
+                            <AccordionTrigger className="mx-2 px-2 py-2 text-sm hover:no-underline hover:bg-sidebar-accent rounded-md text-sidebar-foreground/80 font-medium [&[data-state=open]>svg]:text-accent-foreground">
+                                <div className="flex items-center gap-2">
+                                    <group.icon className="size-4 shrink-0" />
+                                    <span className="group-data-[collapsible=icon]:hidden">{group.title}</span>
+                                </div>
+                            </AccordionTrigger>
+                            <AccordionContent className="pt-1 pb-2">
+                                <SidebarMenu>
+                                {group.items.map((item) => (
+                                    item.items ? (
+                                        <Accordion key={item.label} type="single" collapsible className="w-full">
+                                            <AccordionItem value={item.label} className="border-none">
+                                                 <AccordionTrigger className="mx-2 px-2 py-1.5 text-sm hover:no-underline hover:bg-sidebar-accent rounded-md text-sidebar-foreground/80 [&[data-state=open]>svg]:text-accent-foreground">
+                                                    <div className="flex items-center gap-2 pl-6">
+                                                        {item.icon && <item.icon className="size-4 shrink-0" />}
+                                                        <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
+                                                    </div>
+                                                 </AccordionTrigger>
+                                                 <AccordionContent className="pt-1 pb-1">
+                                                    <SidebarMenu>
+                                                    {item.items.map(subItem => (
+                                                        <SidebarMenuItem key={subItem.href}>
+                                                            <SidebarMenuButton asChild isActive={pathname === subItem.href} size="sm" className="mx-2 justify-start">
+                                                                <Link href={subItem.href} className="flex items-center gap-2 pl-14">
+                                                                    <span className="group-data-[collapsible=icon]:hidden">{subItem.label}</span>
+                                                                </Link>
+                                                            </SidebarMenuButton>
+                                                        </SidebarMenuItem>
+                                                    ))}
+                                                    </SidebarMenu>
+                                                 </AccordionContent>
+                                            </AccordionItem>
+                                        </Accordion>
+                                    ) : (
+                                        <SidebarMenuItem key={item.href}>
+                                            <SidebarMenuButton asChild isActive={pathname.startsWith(item.href!)} size="sm" className="mx-2 justify-start">
+                                                <Link href={item.href!} className="flex items-center gap-2 pl-6">
+                                                    {item.icon && <item.icon className="size-4 shrink-0" />}
+                                                    <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
+                                                </Link>
+                                            </SidebarMenuButton>
+                                        </SidebarMenuItem>
+                                    )
+                                ))}
+                                </SidebarMenu>
+                            </AccordionContent>
+                        </AccordionItem>
+                    ) : (
+                        <div className="p-2">
+                             <SidebarMenu>
+                                <SidebarMenuItem>
+                                    <SidebarMenuButton asChild isActive={pathname === group.href}>
+                                        <Link href={group.href!} className="flex items-center gap-2">
+                                            <group.icon className="size-4 shrink-0" />
+                                            <span className="group-data-[collapsible=icon]:hidden">{group.label}</span>
+                                        </Link>
+                                    </SidebarMenuButton>
+                                </SidebarMenuItem>
                             </SidebarMenu>
-                        </AccordionContent>
-                    </AccordionItem>
-                ) : (
-                    <div className="p-2" key={group.href}>
-                         <SidebarMenu>
-                            <SidebarMenuItem>
-                                <SidebarMenuButton asChild isActive={pathname === group.href}>
-                                    <Link href={group.href!}>
-                                        <group.icon className="size-4" />
-                                        <span>{group.label}</span>
-                                    </Link>
-                                </SidebarMenuButton>
-                            </SidebarMenuItem>
-                        </SidebarMenu>
-                    </div>
-                )
+                        </div>
+                    )}
+                    
+                    {/* Add separator between major sections, but not after the last one */}
+                    {groupIndex < navItems.length - 1 && (
+                        <SidebarSeparator className="mx-2 my-1" />
+                    )}
+                </React.Fragment>
             ))}
           </Accordion>
         </SidebarContent>
@@ -291,11 +304,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="w-full justify-start gap-2 px-2">
-                    <Avatar className="h-8 w-8">
+                    <Avatar className="h-8 w-8 shrink-0">
                         <AvatarImage src="https://picsum.photos/100" alt="Admin" data-ai-hint="person face"/>
                         <AvatarFallback>AD</AvatarFallback>
                     </Avatar>
-                    <div className="text-left">
+                    <div className="text-left group-data-[collapsible=icon]:hidden">
                         <p className="text-sm font-medium">Admin</p>
                         <p className="text-xs text-muted-foreground">admin@diagia.ai</p>
                     </div>
@@ -304,8 +317,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <DropdownMenuContent className="w-56 mb-2" side="top" align="start">
               <DropdownMenuLabel>My Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem><User className="mr-2 h-4 w-4" /><span>Profile</span></DropdownMenuItem>
-              <DropdownMenuItem><Settings className="mr-2 h-4 w-4" /><span>Settings</span></DropdownMenuItem>
+              <DropdownMenuItem>
+                <User className="mr-2 h-4 w-4" />
+                <span>Profile</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Settings className="mr-2 h-4 w-4" />
+                <span>Settings</span>
+              </DropdownMenuItem>
               <DropdownMenuSub>
                 <DropdownMenuSubTrigger>
                     {theme === 'light' ? <Sun className="mr-2 h-4 w-4" /> : <Moon className="mr-2 h-4 w-4" />}
@@ -320,7 +339,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 </DropdownMenuPortal>
               </DropdownMenuSub>
               <DropdownMenuSeparator />
-              <DropdownMenuItem><LogOut className="mr-2 h-4 w-4" /><span>Log out</span></DropdownMenuItem>
+              <DropdownMenuItem>
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Log out</span>
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </SidebarFooter>
@@ -365,4 +387,5 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </SidebarInset>
     </SidebarProvider>
   );
+
 }

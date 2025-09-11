@@ -3,6 +3,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import {
   Accordion,
@@ -198,11 +199,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <Sidebar collapsible="icon" variant="inset">
         <SidebarHeader className="border-b border-sidebar-border">
             <div className="flex items-center gap-2.5 group-data-[collapsible=icon]:justify-center">
-                <Icons.logo className="size-6 text-primary group-data-[collapsible=icon]:size-8" />
-                <span className="text-lg font-semibold tracking-tight text-primary group-data-[collapsible=icon]:hidden">
-                    <span className="text-navy-blue">Diag</span>
-                    <span className="text-dark-orange">IA</span>
-                </span>
+                <Image
+                    src="/logo - diagia.jpg" 
+                    alt="Logo"
+                    className="size-6 text-primary group-data-[collapsible=icon]:size-8" 
+                    height={24}
+                    width={24}
+                    data-ai-hint="company logo"
+                />
             </div>
         </SidebarHeader>
         <SidebarContent className="p-0">
@@ -361,5 +365,4 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </SidebarInset>
     </SidebarProvider>
   );
-
 }

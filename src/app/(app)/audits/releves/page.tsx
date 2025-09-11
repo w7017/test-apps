@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useContext, useMemo, useState } from 'react';
+import React, { useContext, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ClientContext } from '@/contexts/client-context';
 import {
@@ -34,58 +34,38 @@ import Image from 'next/image';
 import { addDays, format, isBefore, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
-// This is mock data for now. In a real application, you'd fetch this.
-const initialTreeData = {
-  'client-1': [
-    {
-      id: 'site-1',
-      name: 'Site de Production Alpha',
-      type: 'site',
-      children: [
-        {
-          id: 'bat-1',
-          name: 'Bâtiment Principal',
-          type: 'batiment',
-          children: [
-            { id: 'niv-1', name: 'Rez-de-chaussée', type: 'niveau', children: [
-                { id: 'loc-1', name: 'Atelier A', type: 'local', children: [
-                    { id: 'eq-1', name: 'Presse Hydraulique P-101', type: 'equipement', image: 'https://picsum.photos/seed/eq1/200/200', reference: 'P-101', domaineTechnique: 'Mécanique', statut: 'En service', marque: 'Siemens', lastAudit: '2024-05-15', auditStatus: 'Conforme', nextAudit: '2024-08-15' },
-                    { id: 'eq-2', name: 'Convoyeur C-203', type: 'equipement', image: 'https://picsum.photos/seed/eq2/200/200', reference: 'C-203', domaineTechnique: 'Automatisme', statut: 'Alerte', marque: 'Bosch', lastAudit: '2024-06-01', auditStatus: 'À surveiller', nextAudit: '2024-07-01' },
-                ]},
-            ]},
-            { id: 'niv-2', name: '1er Étage', type: 'niveau', children: [
-                { id: 'loc-3', name: 'Bureaux Administratifs', type: 'local', children: [
-                    { id: 'eq-3', name: 'Serveur S-01', type: 'equipement', image: 'https://picsum.photos/seed/eq3/200/200', reference: 'S-01', domaineTechnique: 'IT', statut: 'Hors service', marque: 'Dell', lastAudit: '2023-09-20', auditStatus: 'Critique', nextAudit: '2024-03-20' },
-                    { id: 'eq-4', name: 'Climatiseur CLIM-12', type: 'equipement', image: 'https://picsum.photos/seed/eq4/200/200', reference: 'CLIM-12', domaineTechnique: 'CVC', statut: 'En service', marque: 'Carrier', lastAudit: null, auditStatus: 'Jamais audité', nextAudit: null },
-                ]},
-            ]},
-          ],
-        },
-      ],
-    },
-  ],
-   'client-2': [],
-   'client-3': [],
-   'client-4': [],
+type EquipmentWithRelations = {
+  id: string;
+  code: string;
+  libelle: string;
+  image?: string | null;
+  photoUrl?: string | null;
+  reference?: string | null;
+  frequenceMaintenance?: number | null;
+  location: {
+    name: string;
+    level: {
+      name: string;
+      building: {
+        name: string;
+        site: {
+          name: string;
+          client: { id: string; name: string };
+        };
+      };
+    };
+  };
+  audits: Array<{ id: string; date: string; statutGlobal: string; version: number }>
 };
 
-// Helper function to recursively find all equipment for a client
-const getAllEquipment = (nodes: any[]) => {
-  let equipment: any[] = [];
-  const traverse = (items: any[], path: any[]) => {
-    for (const item of items) {
-      const newPath = [...path, { type: item.type, name: item.name }];
-      if (item.type === 'equipement') {
-        const location = newPath.slice(0, -1).map(p => p.name).join(' > ');
-        equipment.push({ ...item, location });
-      }
-      if (item.children) {
-        traverse(item.children, newPath);
-      }
-    }
-  };
-  traverse(nodes, []);
-  return equipment;
+type UiEquipment = {
+  id: string;
+  name: string;
+  image?: string | null;
+  reference?: string | null;
+  lastAudit: string | null;
+  nextAudit: string | null;
+  auditStatus: string;
 };
 
 const formatDate = (dateString: string | null) => {
@@ -115,12 +95,64 @@ export default function RelevesPage() {
   const { selectedClient } = useContext(ClientContext);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [equipments, setEquipments] = useState<UiEquipment[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
-  const allEquipment = useMemo(() => {
-    if (!selectedClient) return [];
-    return getAllEquipment(initialTreeData[selectedClient.id] || []);
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!selectedClient) {
+        setEquipments([]);
+        return;
+      }
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await fetch('/api/equipments', { cache: 'no-store' });
+        if (!res.ok) throw new Error('Échec du chargement des équipements');
+        const data: EquipmentWithRelations[] = await res.json();
+
+        const forClient = data.filter((e) => e.location?.level?.building?.site?.client?.id === selectedClient.id);
+
+        const mapped: UiEquipment[] = forClient.map((e) => {
+          const sortedAudits = [...(e.audits || [])].sort((a, b) => b.version - a.version);
+          const last = sortedAudits[0];
+          const lastAudit = last ? last.date : null;
+
+          let nextAudit: string | null = null;
+          if (lastAudit && e.frequenceMaintenance && e.frequenceMaintenance > 0) {
+            try {
+              nextAudit = format(addDays(parseISO(lastAudit), e.frequenceMaintenance), 'yyyy-MM-dd');
+            } catch (_) {
+              nextAudit = null;
+            }
+          }
+
+          const auditStatus = last ? (last.statutGlobal || 'Conforme') : 'Jamais audité';
+
+          return {
+            id: e.id,
+            name: e.libelle,
+            image: e.photoUrl || e.image || null,
+            reference: e.reference || undefined,
+            lastAudit,
+            nextAudit,
+            auditStatus,
+          };
+        });
+
+        setEquipments(mapped);
+      } catch (err: any) {
+        setError(err.message || 'Une erreur est survenue');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
   }, [selectedClient]);
+
+  const allEquipment = equipments;
 
   const filteredEquipment = useMemo(() => {
     return allEquipment.filter(eq => {
@@ -171,6 +203,12 @@ export default function RelevesPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {loading && (
+            <div className="text-sm text-muted-foreground mb-3">Chargement des équipements…</div>
+          )}
+          {error && (
+            <div className="text-sm text-red-600 mb-3">{error}</div>
+          )}
           <div className="flex flex-col sm:flex-row gap-2 mb-4">
             <div className="relative flex-grow">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />

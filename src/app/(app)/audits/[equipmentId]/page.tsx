@@ -37,54 +37,32 @@ import {
 import Image from 'next/image';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { format, parseISO } from 'date-fns';
 
-// This is mock data for now. In a real application, you'd fetch this.
-const mockEquipment = {
-  id: 'eq-1',
-  name: 'Presse Hydraulique P-101',
-  reference: 'P-101',
-  image: 'https://picsum.photos/seed/eq1/600/400',
-  location: 'Site Alpha > Bâtiment Principal > Rez-de-chaussée > Atelier A',
-  domaineTechnique: 'Mécanique',
-  statut: 'En service',
-  marque: 'Siemens'
+type EquipmentResponse = {
+  id: string;
+  libelle: string;
+  reference?: string | null;
+  image?: string | null;
+  photoUrl?: string | null;
+  domaineGMAO?: string | null;
+  statut: string;
+  marque?: string | null;
+  location?: {
+    name: string;
+    level: { name: string; building: { name: string; site: { name: string } } };
+  } | null;
+  audits: Array<{
+    id: string;
+    version: number;
+    date: string;
+    auditeur: string;
+    statutGlobal: string;
+    notesGlobales?: string | null;
+    checklist: any;
+    photos: any;
+  }>;
 };
-
-const mockAudit = {
-    version: 3,
-    date: '2024-05-21',
-    auditeur: 'Jean Dupont',
-    statutGlobal: 'À surveiller',
-    notesGlobales: 'Le niveau de vibration a augmenté de 5% depuis le dernier relevé. À vérifier lors de la prochaine maintenance préventive.',
-    checklist: [
-        { id: 'check-1', item: 'Contrôle visuel des fuites', statut: 'Conforme', notes: '' },
-        { id: 'check-2', item: 'Vérification pression hydraulique', statut: 'Conforme', notes: 'Pression à 250 bars, stable.' },
-        { id: 'check-3', item: 'Niveau de vibration moteur', statut: 'À surveiller', notes: 'Vibration à 0.7g. Seuil max: 0.8g.' },
-        { id: 'check-4', item: 'Contrôle des sécurités', statut: 'Conforme', notes: 'Arrêt d\'urgence testé OK.' },
-        { id: 'check-5', item: 'Température du circuit', statut: 'Non conforme', notes: 'Température à 85°C. Dépasse le seuil de 80°C. Action corrective immédiate requise.' },
-    ],
-    photos: [
-        { id: 'photo-1', url: 'https://picsum.photos/seed/audit1/300/200', description: 'Vue générale de l\'équipement' },
-        { id: 'photo-2', url: 'https://picsum.photos/seed/audit2/300/200', description: 'Point de fuite mineur détecté sur le joint.' },
-    ]
-}
-
-const mockAuditHistory = [
-    {
-        version: 2,
-        date: '2024-02-15',
-        auditeur: 'Jean Dupont',
-        statutGlobal: 'Conforme',
-        notesGlobales: 'RAS. Tout est en ordre. Maintenance préventive effectuée le mois dernier.',
-    },
-    {
-        version: 1,
-        date: '2023-11-10',
-        auditeur: 'Alice Martin',
-        statutGlobal: 'Conforme',
-        notesGlobales: 'Mise en service et premier audit. Conforme aux spécifications constructeur.',
-    }
-]
 
 
 function StatutBadge({ statut, className = '' }: { statut: string, className?: string }) {
@@ -98,18 +76,72 @@ function StatutBadge({ statut, className = '' }: { statut: string, className?: s
   return <Badge className={`${variants[statut] || 'secondary'} ${baseClasses} ${className}`}>{statut}</Badge>;
 }
 
-export default function AuditPage({ params }: { params: { equipmentId: string } }) {
-  const equipment = mockEquipment; // In real app: fetchEquipment(params.equipmentId)
-  const audit = mockAudit; // In real app: fetchLatestAuditForEquipment(params.equipmentId)
+export default function AuditPage({ params }: { params: Promise<{ equipmentId: string }> }) {
   const router = useRouter();
 
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
+  const [equipment, setEquipment] = React.useState<EquipmentResponse | null>(null);
+  const [currentAudit, setCurrentAudit] = React.useState<EquipmentResponse['audits'][number] | null>(null);
+  const [history, setHistory] = React.useState<EquipmentResponse['audits']>([]);
   const [isEditing, setIsEditing] = React.useState(false);
-  const [checklist, setChecklist] = React.useState(audit.checklist);
+  /*const [checklist, setChecklist] = React.useState<any[]>([]);*/
+
+  const { equipmentId } = React.use(params) as { equipmentId: string };
+
+  React.useEffect(() => {
+    const load = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const res = await fetch(`/api/equipments/${equipmentId}` , { cache: 'no-store' });
+        if (!res.ok) throw new Error('Équipement introuvable');
+        const data: EquipmentResponse = await res.json();
+        setEquipment(data);
+        const sorted = [...(data.audits || [])].sort((a, b) => b.version - a.version);
+        const latest = sorted[0] || null;
+        setCurrentAudit(latest);
+        setHistory(sorted.slice(1));
+        const parsedChecklist = Array.isArray(latest?.checklist) ? latest?.checklist : [];
+        //setChecklist(parsedChecklist || []);
+      } catch (e: any) {
+        setError(e.message || 'Erreur lors du chargement');
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [equipmentId]);
   
   const handleStatusChange = (itemId: string, newStatus: string) => {
-    setChecklist(prev => prev.map(item => item.id === itemId ? {...item, statut: newStatus} : item));
+    //setChecklist(prev => prev.map(item => item.id === itemId ? {...item, statut: newStatus} : item));
   };
 
+
+  
+
+  const checklist = [
+    { id: 'check-1', item: 'Liée à la sécurité', statut: 'Conforme', notes: '' },
+    { id: 'check-2', item: 'Liée à la maintenabilité', statut: 'Conforme', notes: 'Pression à 250 bars, stable.' },
+    { id: 'check-3', item: 'Autre', statut: 'À surveiller', notes: 'Vibration à 0.7g. Seuil max: 0.8g.' },
+  ]
+
+
+  if (loading) {
+    return (
+      <div className="p-4 sm:p-6">
+        <p className="text-sm text-muted-foreground">Chargement de l'équipement…</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-4 sm:p-6">
+        <p className="text-sm text-red-600">{error}</p>
+      </div>
+    );
+  }
 
   if (!equipment) {
     notFound();
@@ -127,7 +159,7 @@ export default function AuditPage({ params }: { params: { equipmentId: string } 
                 <h2 className="text-2xl font-bold tracking-tight font-headline flex items-center gap-2">
                     <ClipboardList className="text-primary"/> Audit de l'équipement
                 </h2>
-                <p className="text-muted-foreground">Consultez ou mettez à jour le relevé pour {equipment.name}. (Version actuelle: {audit.version})</p>
+                <p className="text-muted-foreground">Consultez ou mettez à jour le relevé pour {equipment.libelle}. (Version actuelle: {currentAudit?.version})</p>
             </div>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
@@ -137,7 +169,7 @@ export default function AuditPage({ params }: { params: { equipmentId: string } 
               </DialogTrigger>
               <DialogContent className="max-w-3xl">
                 <DialogHeader>
-                  <DialogTitle>Historique des audits pour {equipment.name}</DialogTitle>
+                  <DialogTitle>Historique des audits pour {equipment.libelle}</DialogTitle>
                 </DialogHeader>
                 <div className="mt-4">
                     <Table>
@@ -151,22 +183,15 @@ export default function AuditPage({ params }: { params: { equipmentId: string } 
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            <TableRow className="bg-muted/50 font-semibold">
-                                 <TableCell>{audit.version} (actuelle)</TableCell>
-                                 <TableCell>{audit.date}</TableCell>
-                                 <TableCell>{audit.auditeur}</TableCell>
-                                 <TableCell><StatutBadge statut={audit.statutGlobal}/></TableCell>
-                                 <TableCell className="max-w-[300px] truncate">{audit.notesGlobales}</TableCell>
-                            </TableRow>
-                            {mockAuditHistory.map(h => (
-                                <TableRow key={h.version}>
-                                    <TableCell>{h.version}</TableCell>
-                                    <TableCell>{h.date}</TableCell>
-                                    <TableCell>{h.auditeur}</TableCell>
-                                    <TableCell><StatutBadge statut={h.statutGlobal}/></TableCell>
-                                    <TableCell className="max-w-[300px] truncate">{h.notesGlobales}</TableCell>
-                                </TableRow>
-                            ))}
+                            {currentAudit && (
+                              <TableRow className="bg-muted/50 font-semibold">
+                                   <TableCell>{currentAudit.version} (actuelle)</TableCell>
+                                   <TableCell>{format(parseISO(currentAudit.date), 'yyyy-MM-dd')}</TableCell>
+                                   <TableCell>{currentAudit.auditeur}</TableCell>
+                                   <TableCell><StatutBadge statut={currentAudit.statutGlobal}/></TableCell>
+                                   <TableCell className="max-w-[300px] truncate">{currentAudit.notesGlobales}</TableCell>
+                              </TableRow>
+                            )}
                         </TableBody>
                     </Table>
                 </div>
@@ -184,17 +209,17 @@ export default function AuditPage({ params }: { params: { equipmentId: string } 
               <CardTitle className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                         <Server className="text-muted-foreground" />
-                        <span>{equipment.name} <span className="text-muted-foreground">({equipment.reference})</span></span>
+                        <span>{equipment.libelle} <span className="text-muted-foreground">({equipment.reference || '—'})</span></span>
                   </div>
-                  <Badge variant="outline">{equipment.statut}</Badge>
+                  <Badge variant="outline">{equipment.statut || '—'}</Badge>
               </CardTitle>
-              <CardDescription>{equipment.location}</CardDescription>
+              <CardDescription>{equipment.location ? `${equipment.location.level.building.site.name} > ${equipment.location.level.building.name} > ${equipment.location.level.name} > ${equipment.location.name}` : 'Localisation inconnue'}</CardDescription>
           </CardHeader>
           <CardContent>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
                   <div>
                       <p className="font-semibold">Domaine Technique</p>
-                      <p className="text-muted-foreground">{equipment.domaineTechnique}</p>
+                      <p className="text-muted-foreground">{equipment.domaineGMAO || '—'}</p>
                   </div>
                   <div>
                       <p className="font-semibold">Marque</p>
@@ -202,11 +227,11 @@ export default function AuditPage({ params }: { params: { equipmentId: string } 
                   </div>
                   <div>
                       <p className="font-semibold">Dernier Audit</p>
-                      <p className="text-muted-foreground">{audit.date} (v{audit.version})</p>
+                      <p className="text-muted-foreground">{currentAudit ? `${format(parseISO(currentAudit.date), 'yyyy-MM-dd')} (v${currentAudit.version})` : '—'}</p>
                   </div>
                   <div>
                       <p className="font-semibold">Auditeur</p>
-                      <p className="text-muted-foreground">{audit.auditeur}</p>
+                      <p className="text-muted-foreground">{currentAudit?.auditeur || '—'}</p>
                   </div>
               </div>
           </CardContent>
@@ -256,7 +281,7 @@ export default function AuditPage({ params }: { params: { equipmentId: string } 
                     <CardTitle className="flex items-center justify-between">
                        <span>Statut Global</span>
                        {isEditing ? (
-                           <Select defaultValue={audit.statutGlobal}>
+                           <Select defaultValue={currentAudit?.statutGlobal}>
                                 <SelectTrigger className="w-[180px] h-9">
                                     <SelectValue/>
                                 </SelectTrigger>
@@ -266,16 +291,16 @@ export default function AuditPage({ params }: { params: { equipmentId: string } 
                                     <SelectItem value="Critique">Critique</SelectItem>
                                 </SelectContent>
                            </Select>
-                       ) : <StatutBadge statut={audit.statutGlobal} className="text-base px-3 py-1" /> }
+                       ) : <StatutBadge statut={currentAudit?.statutGlobal || 'Conforme'} className="text-base px-3 py-1" /> }
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
                     <Label>Notes Globales</Label>
                      {isEditing ? (
-                        <Textarea defaultValue={audit.notesGlobales} className="mt-2 min-h-[100px]"/>
+                        <Textarea defaultValue={currentAudit?.notesGlobales || ''} className="mt-2 min-h-[100px]"/>
                     ) : (
                         <p className="text-sm text-muted-foreground mt-2 italic">
-                            {audit.notesGlobales || 'Aucune note globale.'}
+                            {currentAudit?.notesGlobales || 'Aucune note globale.'}
                         </p>
                     )}
                 </CardContent>
@@ -289,11 +314,11 @@ export default function AuditPage({ params }: { params: { equipmentId: string } 
                     <CardDescription>Photos prises lors de l'audit.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    {audit.photos.length > 0 ? (
+                    {currentAudit?.photos.length > 0 ? (
                         <div className="grid grid-cols-2 gap-4">
-                            {audit.photos.map(p => (
-                                <div key={p.id} className="group relative">
-                                    <Image src={p.url} alt={p.description} width={300} height={200} className="rounded-md object-cover aspect-[3/2]"/>
+                            {Array.isArray(currentAudit?.photos) ? currentAudit?.photos.map((p: any, idx: number) => (
+                                <div key={p.id || idx} className="group relative">
+                                    <Image src={p.url} alt={p.description || 'Photo'} width={300} height={200} className="rounded-md object-cover aspect-[3/2]"/>
                                     <div className="absolute bottom-0 left-0 w-full bg-black/50 text-white text-xs p-2 rounded-b-md opacity-0 group-hover:opacity-100 transition-opacity">
                                         {p.description}
                                     </div>
@@ -305,7 +330,7 @@ export default function AuditPage({ params }: { params: { equipmentId: string } 
                                         </div>
                                     )}
                                 </div>
-                            ))}
+                            )) : null}
                         </div>
                     ) : (
                         <div className="text-center py-8 text-muted-foreground border-2 border-dashed rounded-lg">
@@ -319,7 +344,7 @@ export default function AuditPage({ params }: { params: { equipmentId: string } 
                  <Card className="sticky bottom-6">
                     <CardFooter className="p-3 justify-end gap-2">
                         <Button variant="ghost" onClick={() => setIsEditing(false)}>Annuler</Button>
-                        <Button>Enregistrer (créer v{audit.version + 1})</Button>
+                        <Button>Enregistrer (créer v{(currentAudit?.version || 0) + 1})</Button>
                     </CardFooter>
                  </Card>
             )}

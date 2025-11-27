@@ -1,5 +1,5 @@
 // src/services/building.service.ts
-import { getBuildingsBySiteId, getBuildingById, createBuilding, updateBuilding, deleteBuilding } from '@/repositories/building.repository';
+import { getBuildingsBySiteId, getBuildingById, createBuilding, updateBuilding, deleteBuilding, getBuildingsByClientId } from '@/repositories/building.repository';
 import { Building } from '@prisma/client';
 
 export const fetchBuildingsBySiteId = async (siteId: string): Promise<Building[]> => {
@@ -24,6 +24,37 @@ export const fetchBuildingsBySiteId = async (siteId: string): Promise<Building[]
     return buildings;
   } catch (error) {
     console.error("Service: fetchBuildingsBySiteId - Error:", error);
+    throw error;
+  }
+};
+
+export const fetchBuildingsByClientId = async (clientId: string) => {
+  try {
+    console.log("Service: fetchBuildingsByClientId - Starting with clientId:", clientId);
+
+    // Validation
+    if (!clientId || typeof clientId !== "string") {
+      console.error("Service: fetchBuildingsByClientId - Invalid clientId:", clientId);
+      throw new Error("Client ID is required and must be a string.");
+    }
+
+    if (clientId.trim().length === 0) {
+      console.error("Service: fetchBuildingsByClientId - Empty clientId after trim");
+      throw new Error("Client ID cannot be empty.");
+    }
+
+    console.log("Service: fetchBuildingsByClientId - Validation passed, calling repository");
+    const buildings = await getBuildingsByClientId(clientId);
+
+    console.log(
+      "Service: fetchBuildingsByClientId - Success:",
+      buildings.length,
+      "buildings"
+    );
+
+    return buildings;
+  } catch (error) {
+    console.error("Service: fetchBuildingsByClientId - Error:", error);
     throw error;
   }
 };

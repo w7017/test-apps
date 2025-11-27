@@ -62,6 +62,117 @@ export const getLocationsByLevelId = async (levelId: string) => {
   }
 };
 
+export const getLocationsByBuildingId = async (buildingId: string) => {
+  try {
+    console.log("Repository: getLocationsByBuildingId - Starting with buildingId:", buildingId);
+    const locations = await prisma.location.findMany({
+      where: {
+        level: {
+          buildingId
+        }
+      },
+      include: {
+        level: {
+          include: {
+            building: {
+              include: {
+                site: {
+                  include: {
+                    client: true
+                  }
+                }
+              }
+            }
+          }
+        },
+        equipments: true
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+    console.log("Repository: getLocationsByBuildingId - Success:", locations.length, "locations found");
+    return locations;
+  } catch (error) {
+    console.error("Repository: getLocationsByBuildingId - Prisma error:", error);
+    throw new Error(`Database error: ${error.message}`);
+  }
+};
+
+export const getLocationsBySiteId = async (siteId: string) => {
+  try {
+    console.log("Repository: getLocationsBySiteId - Starting with siteId:", siteId);
+    const locations = await prisma.location.findMany({
+      where: {
+        level: {
+          building: {
+            siteId
+          }
+        }
+      },
+      include: {
+        level: {
+          include: {
+            building: {
+              include: {
+                site: {
+                  include: {
+                    client: true
+                  }
+                }
+              }
+            }
+          }
+        },
+        equipments: true
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+    console.log("Repository: getLocationsBySiteId - Success:", locations.length, "locations found");
+    return locations;
+  } catch (error) {
+    console.error("Repository: getLocationsBySiteId - Prisma error:", error);
+    throw new Error(`Database error: ${error.message}`);
+  }
+};
+
+export const getLocationsByClientId = async (clientId: string) => {
+  try {
+    console.log("Repository: getLocationsByClientId - Starting with clientId:", clientId);
+    const locations = await prisma.location.findMany({
+      where: {
+        level: {
+          building: {
+            site: {
+              clientId
+            }
+          }
+        }
+      },
+      include: {
+        level: {
+          include: {
+            building: {
+              include: {
+                site: {
+                  include: {
+                    client: true
+                  }
+                }
+              }
+            }
+          }
+        },
+        equipments: true
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+    console.log("Repository: getLocationsByClientId - Success:", locations.length, "locations found");
+    return locations;
+  } catch (error) {
+    console.error("Repository: getLocationsByClientId - Prisma error:", error);
+    throw new Error(`Database error: ${error.message}`);
+  }
+};
+
 export const getLocationById = async (id: string) => {
   try {
     console.log("Repository: getLocationById - Starting with id:", id);

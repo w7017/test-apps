@@ -82,7 +82,17 @@ const navItems = [
     icon: Network,
     items: [
       { href: '/parc/clients', label: 'Clients', icon: Users },
-      { href: '/parc/arborescence', label: 'Arborescence Technique', icon: GitMerge },
+      { 
+        label: 'Arborescence Technique', 
+        icon: GitMerge,
+        items: [
+          { href: '/parc/arborescence/sites', label: 'Liste des Sites', icon: Building2 },
+          { href: '/parc/arborescence/batiments', label: 'Liste des Bâtiments', icon: Building2 },
+          { href: '/parc/arborescence/niveaux', label: 'Liste des Niveaux', icon: Building2 },
+          { href: '/parc/arborescence/locaux', label: 'Liste des Locaux', icon: Building2 },
+          { href: '/parc/arborescence/equipements', label: 'Liste des Équipements', icon: Server },
+        ]
+      },
     ],
   },
   {
@@ -94,10 +104,10 @@ const navItems = [
     ],
   },
   {
-    title: 'PPA',
+    title: 'Plan Pluriannuel de Travaux',
     icon: CalendarClock,
     href: '/ppa',
-    label: 'Plan Préventif Annuel',
+    label: 'Plan Pluriannuel de Travaux',
   },
   {
     title: 'Préparation GMAO',
@@ -196,8 +206,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <SidebarProvider>
-      <Sidebar collapsible="icon" variant="inset">
-        <SidebarHeader className="border-b border-sidebar-border">
+      <Sidebar collapsible="icon" variant="inset" className="bg-gradient-to-t from-blue-900 via-blue-700 to-blue-600 [&_[data-sidebar=sidebar]]:bg-transparent [&_[data-sidebar=header]]:border-white/20 [&_[data-sidebar=footer]]:border-white/20">
+        <SidebarHeader className="border-b border-white/20">
             <div className="flex items-center gap-2.5 group-data-[collapsible=icon]:justify-center">
                 <Image
                     src="/logo - diagia.jpg" 
@@ -213,7 +223,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <div className="p-2">
             <SidebarMenu>
                 <SidebarMenuItem>
-                    <SidebarMenuButton asChild isActive={pathname === '/dashboard'}>
+                    <SidebarMenuButton asChild isActive={pathname === '/dashboard'} className="text-white hover:bg-white/10 data-[active=true]:bg-white/20">
                         <Link href="/dashboard" className="flex items-center gap-2">
                             <Home className="size-4" />
                             <span>Dashboard</span>
@@ -223,14 +233,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </SidebarMenu>
           </div>
           
-          <SidebarSeparator className="mx-2" />
+          <SidebarSeparator className="mx-2 bg-white/20" />
           
           <Accordion type="multiple" defaultValue={['Parc', 'Audits', 'Préparation GMAO']} className="w-full">
             {navItems.map((group, groupIndex) => (
                 <React.Fragment key={group.title}>
                     {group.items ? (
                         <AccordionItem value={group.title} className="border-none">
-                            <AccordionTrigger className="mx-2 px-2 py-2 text-sm hover:no-underline hover:bg-sidebar-accent rounded-md text-sidebar-foreground/80 font-medium [&[data-state=open]>svg]:text-accent-foreground">
+                            <AccordionTrigger className="mx-2 px-2 py-2 text-sm hover:no-underline hover:bg-white/10 rounded-md text-white font-medium [&[data-state=open]>svg]:text-white">
                                 <div className="flex items-center gap-2">
                                     <group.icon className="size-4 shrink-0" />
                                     <span className="group-data-[collapsible=icon]:hidden">{group.title}</span>
@@ -242,7 +252,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                                     item.items ? (
                                         <Accordion key={item.label} type="single" collapsible className="w-full">
                                             <AccordionItem value={item.label} className="border-none">
-                                                 <AccordionTrigger className="mx-2 px-2 py-1.5 text-sm hover:no-underline hover:bg-sidebar-accent rounded-md text-sidebar-foreground/80 [&[data-state=open]>svg]:text-accent-foreground">
+                                                 <AccordionTrigger className="mx-2 px-2 py-1.5 text-sm hover:no-underline hover:bg-white/10 rounded-md text-white/90 [&[data-state=open]>svg]:text-white">
                                                     <div className="flex items-center gap-2 pl-6">
                                                         {item.icon && <item.icon className="size-4 shrink-0" />}
                                                         <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
@@ -252,7 +262,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                                                     <SidebarMenu>
                                                     {item.items.map(subItem => (
                                                         <SidebarMenuItem key={subItem.href}>
-                                                            <SidebarMenuButton asChild isActive={pathname === subItem.href} size="sm" className="mx-2 justify-start">
+                                                            <SidebarMenuButton asChild isActive={pathname === subItem.href} size="sm" className="mx-2 justify-start text-white hover:bg-white/10 data-[active=true]:bg-white/20">
                                                                 <Link href={subItem.href} className="flex items-center gap-2 pl-14">
                                                                     <span className="group-data-[collapsible=icon]:hidden">{subItem.label}</span>
                                                                 </Link>
@@ -265,7 +275,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                                         </Accordion>
                                     ) : (
                                         <SidebarMenuItem key={item.href}>
-                                            <SidebarMenuButton asChild isActive={pathname.startsWith(item.href!)} size="sm" className="mx-2 justify-start">
+                                            <SidebarMenuButton asChild isActive={pathname.startsWith(item.href!)} size="sm" className="mx-2 justify-start text-white hover:bg-white/10 data-[active=true]:bg-white/20">
                                                 <Link href={item.href!} className="flex items-center gap-2 pl-6">
                                                     {item.icon && <item.icon className="size-4 shrink-0" />}
                                                     <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
@@ -281,7 +291,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                         <div className="p-2">
                              <SidebarMenu>
                                 <SidebarMenuItem>
-                                    <SidebarMenuButton asChild isActive={pathname === group.href}>
+                                    <SidebarMenuButton asChild isActive={pathname === group.href} className="text-white hover:bg-white/10 data-[active=true]:bg-white/20">
                                         <Link href={group.href!} className="flex items-center gap-2">
                                             <group.icon className="size-4 shrink-0" />
                                             <span className="group-data-[collapsible=icon]:hidden">{group.label}</span>
@@ -294,23 +304,23 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     
                     {/* Add separator between major sections, but not after the last one */}
                     {groupIndex < navItems.length - 1 && (
-                        <SidebarSeparator className="mx-2 my-1" />
+                        <SidebarSeparator className="mx-2 my-1 bg-white/20" />
                     )}
                 </React.Fragment>
             ))}
           </Accordion>
         </SidebarContent>
-        <SidebarFooter className="border-t border-sidebar-border">
+        <SidebarFooter className="border-t border-white/20">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="w-full justify-start gap-2 px-2">
+                <Button variant="ghost" className="w-full justify-start gap-2 px-2 text-white hover:bg-white/10">
                     <Avatar className="h-8 w-8 shrink-0">
                         <AvatarImage src="https://picsum.photos/100" alt="Admin" data-ai-hint="person face"/>
                         <AvatarFallback>AD</AvatarFallback>
                     </Avatar>
                     <div className="text-left group-data-[collapsible=icon]:hidden">
                         <p className="text-sm font-medium">Admin</p>
-                        <p className="text-xs text-muted-foreground">admin@diagia.ai</p>
+                        <p className="text-xs text-white/70">admin@diagia.ai</p>
                     </div>
                 </Button>
             </DropdownMenuTrigger>
@@ -348,7 +358,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </SidebarFooter>
       </Sidebar>
       <SidebarInset className="flex flex-col">
-        <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-sm sm:px-6">
+        <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-sm sm:px-6 bg-blue-600 text-white">
           <SidebarTrigger />
           <div className="flex-1">
             <Breadcrumb>
@@ -387,5 +397,4 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </SidebarInset>
     </SidebarProvider>
   );
-
 }

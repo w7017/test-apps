@@ -76,6 +76,10 @@ export const getSiteById = async (id: string) => {
 };
 
 export const createSite = async (data: {
+  address: any;
+  codeClient: any;
+  codeAffaire: any;
+  codeContrat: any;
   name: string;
   image?: string;
   clientId: string;
@@ -89,6 +93,10 @@ export const createSite = async (data: {
     const siteData = {
       name: data.name.trim(),
       image: data.image?.trim() || null,
+      address: data.address?.trim() || null,
+      codeClient: data.codeClient?.trim() || null,
+      codeAffaire: data.codeAffaire?.trim() || null,
+      codeContrat: data.codeContrat?.trim() || null,
       clientId: data.clientId,
     };
     

@@ -2164,92 +2164,125 @@ const handleDeleteItem = async (itemId, itemType) => {
       )}
 
       {itemType !== 'equipment' ? (
-        <>
+        <Card>
+          <CardHeader>
             <div className="flex justify-between items-center">
-                <h3 className="text-xl font-semibold flex items-center gap-2">
-                    {ICONS?.[itemType]} Liste des {getDisplayTypePlural(itemType)}
-                </h3>
-                <AddEditDialog
-                    item={null}
-                    itemType={itemType}
-                    onSave={handleAdd}
-                    trigger={<Button><PlusCircle className="mr-2"/>Ajouter un {getDisplayType(itemType)}</Button>}
-                />
+              <CardTitle className="text-lg flex items-center gap-2">
+                {ICONS?.[itemType]} {getDisplayTypePlural(itemType).charAt(0).toUpperCase() + getDisplayTypePlural(itemType).slice(1)}
+              </CardTitle>
+              <AddEditDialog
+                item={null}
+                itemType={itemType}
+                onSave={handleAdd}
+                trigger={<Button size="sm"><PlusCircle className="mr-2"/>Ajouter un {getDisplayType(itemType)}</Button>}
+              />
             </div>
+          </CardHeader>
+          <CardContent>
             {itemsToList.length > 0 ? (
-                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[80px]">Image</TableHead>
+                      <TableHead>Nom</TableHead>
+                      <TableHead>Enfants</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                     {itemsToList.map(item => (
-                    <Card key={item.id} className="group flex flex-col">
-                        <CardHeader className="relative p-0">
-                            <Link href={`${pathname}/${item.id}`} className="block">
-                                <Image 
-                                  src={item.image || 'https://placehold.co/400x300'} 
-                                  alt={item.name} 
-                                  width={400} 
-                                  height={300} 
-                                  className="rounded-t-lg object-cover aspect-[4/3]" 
-                                  data-ai-hint="building exterior"
-                                />
+                      <TableRow key={item.id}>
+                        <TableCell>
+                          <Image 
+                            src={item.image || 'https://placehold.co/60'} 
+                            alt={item.name} 
+                            width={60} 
+                            height={60} 
+                            className="rounded-md object-cover" 
+                            data-ai-hint="building"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <div className="font-medium">{item.name}</div>
+                          {item.type === 'equipment' && item.code && (
+                            <div className="text-sm text-muted-foreground">{item.code}</div>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-sm text-muted-foreground">
+                            {item.children?.length || 0} {getDisplayTypePlural(HIERARCHY[HIERARCHY.indexOf(item.type) + 1])}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button 
+                            asChild 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8" 
+                            title="Consulter"
+                          >
+                            <Link href={`${pathname}/${item.id}`}>
+                              <Eye className="w-4 h-4" />
                             </Link>
-                             <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                             <AddEditDialog 
-                                item={item} 
-                                itemType={item.type} 
-                                onSave={handleUpdateItem} 
-                                trigger={<Button size="icon" className="h-8 w-8"><Edit/></Button>}
-                              />
-                              <DeleteConfirmDialog
-                                item={item}
-                                itemType={item.type}
-                                onDelete={(itemId:any) => handleDeleteItem(itemId, item.type)}
-                                trigger={
-                                  <Button 
-                                    size="icon" 
-                                    variant="destructive" 
-                                    className="h-8 w-8"
-                                  >
-                                    <Trash2/>
-                                  </Button>
-                                } />
-                            </div>
-                        </CardHeader>
-                        <CardContent className="p-4 flex-grow flex flex-col">
-                            <CardTitle className="text-lg mb-2">{item.name}</CardTitle>
-                            {item.type === 'equipment' && item.code && (
-                              <p className="text-sm text-muted-foreground mb-2">Code: {item.code}</p>
-                            )}
-                            <div className="text-sm text-muted-foreground flex-grow">
-                                {item.children?.length || 0} {getDisplayTypePlural(HIERARCHY[HIERARCHY.indexOf(item.type) + 1])}
-                            </div>
-                            <Button asChild variant="outline" className="w-full mt-4">
-                                <Link href={`${pathname}/${item.id}`}>
-                                  Gérer <ChevronRight className="ml-auto"/>
-                                </Link>
-                            </Button>
-                        </CardContent>
-                    </Card>
+                          </Button>
+                          <AddEditDialog 
+                            item={item} 
+                            itemType={item.type} 
+                            onSave={handleUpdateItem} 
+                            trigger={
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-8 w-8" 
+                                title="Modifier"
+                              >
+                                <Edit className="w-4 h-4"/>
+                              </Button>
+                            }
+                          />
+                          <DeleteConfirmDialog
+                            item={item}
+                            itemType={item.type}
+                            onDelete={(itemId:any) => handleDeleteItem(itemId, item.type)}
+                            trigger={
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-8 w-8 text-destructive" 
+                                title="Supprimer"
+                              >
+                                <Trash2 className="w-4 h-4"/>
+                              </Button>
+                            }
+                          />
+                        </TableCell>
+                      </TableRow>
                     ))}
-                </div>
+                  </TableBody>
+                </Table>
+              </div>
             ) : (
-                <div className="text-center py-12 text-muted-foreground border-2 border-dashed rounded-lg">
-                    <p>Aucun {getDisplayTypePlural(itemType)} pour le moment.</p>
-                    <AddEditDialog
-                        item={null}
-                        itemType={itemType}
-                        onSave={handleAdd}
-                        trigger={<Button variant="link" className="mt-2">Commencez par en ajouter un.</Button>}
-                    />
-                </div>
+              <div className="text-center py-12 text-muted-foreground border-2 border-dashed rounded-lg">
+                <p>Aucun {getDisplayTypePlural(itemType)} pour le moment.</p>
+                <AddEditDialog
+                  item={null}
+                  itemType={itemType}
+                  onSave={handleAdd}
+                  trigger={<Button variant="link" className="mt-2">Commencez par en ajouter un.</Button>}
+                />
+              </div>
             )}
-        </>
+          </CardContent>
+        </Card>
       ) : (
         <EquipmentManager 
-        items={itemsToList} 
-        onUpdate={handleUpdateEquipment}
-        onDelete={(itemId) => handleDeleteItem(itemId, 'equipment')}
-        onDuplicate={handleDuplicate}
-        currentItem={currentItem}
-      />
+          items={itemsToList} 
+          onUpdate={handleUpdateEquipment}
+          onDelete={(itemId) => handleDeleteItem(itemId, 'equipment')}
+          onDuplicate={handleDuplicate}
+          currentItem={currentItem}
+        />
       )}
     </div>
   );

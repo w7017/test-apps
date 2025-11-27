@@ -35,6 +35,43 @@ export const getBuildingsBySiteId = async (siteId: string) => {
   }
 };
 
+export const getBuildingsByClientId = async (clientId: string) => {
+  try {
+    console.log("Repository: getBuildingsByClientId - Starting with clientId:", clientId);
+    
+    const buildings = await prisma.building.findMany({
+      where: { 
+        site: {
+          clientId: clientId
+        }
+      },
+      include: {
+        site: {
+          include: {
+            client: true
+          }
+        },
+        levels: {
+          include: {
+            locations: {
+              include: {
+                equipments: true
+              }
+            }
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+    
+    console.log("Repository: getBuildingsByClientId - Success:", buildings.length, "buildings found");
+    return buildings;
+  } catch (error) {
+    console.error("Repository: getBuildingsByClientId - Prisma error:", error);
+    throw new Error(`Database error: ${error.message}`);
+  }
+};
+
 export const getBuildingById = async (id: string) => {
   try {
     console.log("Repository: getBuildingById - Starting with id:", id);

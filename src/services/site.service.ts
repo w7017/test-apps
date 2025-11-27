@@ -69,6 +69,10 @@ export const fetchSiteById = async (id: string): Promise<Site> => {
 
 export const addSite = async (data: {
   name: string;
+  address: any;
+  codeClient: any;
+  codeAffaire: any;
+  codeContrat: any;
   image?: string;
   clientId: string;
 }): Promise<Site> => {

@@ -23,6 +23,10 @@ model Site {
   id          String      @id @default(cuid())
   name        String
   image       String?
+  address     String?
+  codeClient  String?
+  codeAffaire String?
+  codeContrat String?
   client      Client      @relation(fields: [clientId], references: [id])
   clientId    String
   buildings   Building[]

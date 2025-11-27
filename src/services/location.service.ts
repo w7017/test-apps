@@ -1,5 +1,15 @@
 // src/services/location.service.ts
-import { createLocation, getAllLocations, getLocationsByLevelId, getLocationById, updateLocation, deleteLocation } from "@/repositories/location.repository";
+import { 
+  createLocation, 
+  getAllLocations, 
+  getLocationsByLevelId,
+  getLocationsByBuildingId,
+  getLocationsBySiteId,
+  getLocationsByClientId,
+  getLocationById, 
+  updateLocation, 
+  deleteLocation 
+} from "@/repositories/location.repository";
 import { Location } from "@prisma/client";
 
 export const fetchAllLocations = async (): Promise<Location[]> => {
@@ -36,6 +46,84 @@ export const fetchLocationsByLevelId = async (levelId: string): Promise<Location
     return locations;
   } catch (error) {
     console.error("Service: fetchLocationsByLevelId - Error:", error);
+    throw error;
+  }
+};
+
+export const fetchLocationsByBuildingId = async (buildingId: string): Promise<Location[]> => {
+  try {
+    console.log("Service: fetchLocationsByBuildingId - Starting with buildingId:", buildingId);
+    
+    // Validation
+    if (!buildingId || typeof buildingId !== "string") {
+      console.error("Service: fetchLocationsByBuildingId - Invalid buildingId:", buildingId);
+      throw new Error("Building ID is required and must be a string.");
+    }
+    
+    if (buildingId.trim().length === 0) {
+      console.error("Service: fetchLocationsByBuildingId - Empty buildingId after trim");
+      throw new Error("Building ID cannot be empty.");
+    }
+
+    console.log("Service: fetchLocationsByBuildingId - Validation passed, calling repository");
+    const locations = await getLocationsByBuildingId(buildingId);
+    console.log("Service: fetchLocationsByBuildingId - Success:", locations.length, "locations");
+    
+    return locations;
+  } catch (error) {
+    console.error("Service: fetchLocationsByBuildingId - Error:", error);
+    throw error;
+  }
+};
+
+export const fetchLocationsBySiteId = async (siteId: string): Promise<Location[]> => {
+  try {
+    console.log("Service: fetchLocationsBySiteId - Starting with siteId:", siteId);
+    
+    // Validation
+    if (!siteId || typeof siteId !== "string") {
+      console.error("Service: fetchLocationsBySiteId - Invalid siteId:", siteId);
+      throw new Error("Site ID is required and must be a string.");
+    }
+    
+    if (siteId.trim().length === 0) {
+      console.error("Service: fetchLocationsBySiteId - Empty siteId after trim");
+      throw new Error("Site ID cannot be empty.");
+    }
+
+    console.log("Service: fetchLocationsBySiteId - Validation passed, calling repository");
+    const locations = await getLocationsBySiteId(siteId);
+    console.log("Service: fetchLocationsBySiteId - Success:", locations.length, "locations");
+    
+    return locations;
+  } catch (error) {
+    console.error("Service: fetchLocationsBySiteId - Error:", error);
+    throw error;
+  }
+};
+
+export const fetchLocationsByClientId = async (clientId: string): Promise<Location[]> => {
+  try {
+    console.log("Service: fetchLocationsByClientId - Starting with clientId:", clientId);
+    
+    // Validation
+    if (!clientId || typeof clientId !== "string") {
+      console.error("Service: fetchLocationsByClientId - Invalid clientId:", clientId);
+      throw new Error("Client ID is required and must be a string.");
+    }
+    
+    if (clientId.trim().length === 0) {
+      console.error("Service: fetchLocationsByClientId - Empty clientId after trim");
+      throw new Error("Client ID cannot be empty.");
+    }
+
+    console.log("Service: fetchLocationsByClientId - Validation passed, calling repository");
+    const locations = await getLocationsByClientId(clientId);
+    console.log("Service: fetchLocationsByClientId - Success:", locations.length, "locations");
+    
+    return locations;
+  } catch (error) {
+    console.error("Service: fetchLocationsByClientId - Error:", error);
     throw error;
   }
 };

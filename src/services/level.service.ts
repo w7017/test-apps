@@ -1,5 +1,14 @@
 // src/services/level.service.ts
-import { createLevel, getAllLevels, getLevelsByBuildingId, getLevelById, updateLevel, deleteLevel } from "@/repositories/level.repository";
+import { 
+  createLevel, 
+  getAllLevels, 
+  getLevelsByBuildingId, 
+  getLevelsBySiteId,
+  getLevelsByClientId,
+  getLevelById, 
+  updateLevel, 
+  deleteLevel 
+} from "@/repositories/level.repository";
 import { Level } from "@prisma/client";
 
 export const fetchAllLevels = async (): Promise<Level[]> => {
@@ -36,6 +45,58 @@ export const fetchLevelsByBuildingId = async (buildingId: string): Promise<Level
     return levels;
   } catch (error) {
     console.error("Service: fetchLevelsByBuildingId - Error:", error);
+    throw error;
+  }
+};
+
+export const fetchLevelsBySiteId = async (siteId: string): Promise<Level[]> => {
+  try {
+    console.log("Service: fetchLevelsBySiteId - Starting with siteId:", siteId);
+    
+    // Validation
+    if (!siteId || typeof siteId !== "string") {
+      console.error("Service: fetchLevelsBySiteId - Invalid siteId:", siteId);
+      throw new Error("Site ID is required and must be a string.");
+    }
+    
+    if (siteId.trim().length === 0) {
+      console.error("Service: fetchLevelsBySiteId - Empty siteId after trim");
+      throw new Error("Site ID cannot be empty.");
+    }
+
+    console.log("Service: fetchLevelsBySiteId - Validation passed, calling repository");
+    const levels = await getLevelsBySiteId(siteId);
+    console.log("Service: fetchLevelsBySiteId - Success:", levels.length, "levels");
+    
+    return levels;
+  } catch (error) {
+    console.error("Service: fetchLevelsBySiteId - Error:", error);
+    throw error;
+  }
+};
+
+export const fetchLevelsByClientId = async (clientId: string): Promise<Level[]> => {
+  try {
+    console.log("Service: fetchLevelsByClientId - Starting with clientId:", clientId);
+    
+    // Validation
+    if (!clientId || typeof clientId !== "string") {
+      console.error("Service: fetchLevelsByClientId - Invalid clientId:", clientId);
+      throw new Error("Client ID is required and must be a string.");
+    }
+    
+    if (clientId.trim().length === 0) {
+      console.error("Service: fetchLevelsByClientId - Empty clientId after trim");
+      throw new Error("Client ID cannot be empty.");
+    }
+
+    console.log("Service: fetchLevelsByClientId - Validation passed, calling repository");
+    const levels = await getLevelsByClientId(clientId);
+    console.log("Service: fetchLevelsByClientId - Success:", levels.length, "levels");
+    
+    return levels;
+  } catch (error) {
+    console.error("Service: fetchLevelsByClientId - Error:", error);
     throw error;
   }
 };

@@ -54,6 +54,70 @@ export const getLevelsByBuildingId = async (buildingId: string) => {
   }
 };
 
+export const getLevelsBySiteId = async (siteId: string) => {
+  try {
+    console.log("Repository: getLevelsBySiteId - Starting with siteId:", siteId);
+    const levels = await prisma.level.findMany({
+      where: {
+        building: {
+          siteId
+        }
+      },
+      include: {
+        building: {
+          include: {
+            site: {
+              include: {
+                client: true
+              }
+            }
+          }
+        },
+        locations: true
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+    console.log("Repository: getLevelsBySiteId - Success:", levels.length, "levels found");
+    return levels;
+  } catch (error) {
+    console.error("Repository: getLevelsBySiteId - Prisma error:", error);
+    throw new Error(`Database error: ${error.message}`);
+  }
+};
+
+export const getLevelsByClientId = async (clientId: string) => {
+  try {
+    console.log("Repository: getLevelsByClientId - Starting with clientId:", clientId);
+    const levels = await prisma.level.findMany({
+      where: {
+        building: {
+          site: {
+            clientId
+          }
+        }
+      },
+      include: {
+        building: {
+          include: {
+            site: {
+              include: {
+                client: true
+              }
+            }
+          }
+        },
+        locations: true
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+    console.log("Repository: getLevelsByClientId - Success:", levels.length, "levels found");
+    return levels;
+  } catch (error) {
+    console.error("Repository: getLevelsByClientId - Prisma error:", error);
+    throw new Error(`Database error: ${error.message}`);
+  }
+};
+
 export const getLevelById = async (id: string) => {
   try {
     console.log("Repository: getLevelById - Starting with id:", id);

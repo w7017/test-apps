@@ -549,6 +549,33 @@ export default function HierarchyListPage({ listType, selectedClient } : any) {
                         </>
                       )}
                       
+                      {listType === 'batiments' && (
+                        <>
+                          <td className="px-4 py-3 font-medium">{item.name}</td>
+                          <td className="px-4 py-3 text-sm">{item.site?.name || '-'}</td>
+                          <td className="px-4 py-3 text-sm">{item.levels?.length || 0}</td>
+                        </>
+                      )}
+
+                      {listType === 'niveaux' && (
+                        <>
+                          <td className="px-4 py-3 font-medium">{item.name}</td>
+                          <td className="px-4 py-3 text-sm">{item.building?.name || '-'}</td>
+                          <td className="px-4 py-3 text-sm">{item.building?.site?.name || '-'}</td>
+                          <td className="px-4 py-3 text-sm">{item.locations?.length || 0}</td>
+                        </>
+                      )}
+                      
+                      {listType === 'locaux' && (
+                        <>
+                          <td className="px-4 py-3 font-medium">{item.name}</td>
+                          <td className="px-4 py-3 text-sm">{item.level?.name || '-'}</td>
+                          <td className="px-4 py-3 text-sm">{item.level?.building?.name || '-'}</td>
+                          <td className="px-4 py-3 text-sm">{item.level?.building?.site?.name || '-'}</td>
+                          <td className="px-4 py-3 text-sm">{item.equipments?.length || 0}</td>
+                        </>
+                      )}
+                      
                       {listType === 'equipements' && (
                         <>
                           <td className="px-4 py-3 font-mono text-sm">{item.code}</td>
@@ -573,37 +600,20 @@ export default function HierarchyListPage({ listType, selectedClient } : any) {
                           </td>
                         </>
                       )}
-
-                        {listType === 'batiments' && (
-                        <>
-                            <td className="px-4 py-3 font-medium">{item.name}</td>
-                            <td className="px-4 py-3 text-sm">{item.site?.name || '-'}</td>
-                            <td className="px-4 py-3 text-sm">{item.levels?.length || 0}</td>
-                        </>
-                        )}
-
-{listType === 'niveaux' && (
-                        <>
-                          <td className="px-4 py-3 font-medium">{item.name}</td>
-                          <td className="px-4 py-3 text-sm">{item.building?.name || '-'}</td>
-                          <td className="px-4 py-3 text-sm">{item.building?.site?.name || '-'}</td>
-                          <td className="px-4 py-3 text-sm">{item.locations?.length || 0}</td>
-                        </>
-                      )}
-                      
-                      {listType === 'locaux' && (
-                        <>
-                          <td className="px-4 py-3 font-medium">{item.name}</td>
-                          <td className="px-4 py-3 text-sm">{item.level?.name || '-'}</td>
-                          <td className="px-4 py-3 text-sm">{item.level?.building?.name || '-'}</td>
-                          <td className="px-4 py-3 text-sm">{item.level?.building?.site?.name || '-'}</td>
-                          <td className="px-4 py-3 text-sm">{item.equipments?.length || 0}</td>
-                        </>
-                      )}
                       
                       <td className="px-4 py-3 text-right">
                         <div className="flex justify-end gap-1">
-                          <Link href={`/parc/arborescence/${item.id}`}>
+                          <Link href={
+                            listType === 'sites' 
+                              ? `/parc/arborescence/${item.id}`
+                              : listType === 'batiments'
+                              ? `/parc/arborescence/${item.siteId}/${item.id}`
+                              : listType === 'niveaux'
+                              ? `/parc/arborescence/${item.building?.site?.id || item.building?.siteId}/${item.buildingId}/${item.id}`
+                              : listType === 'locaux'
+                              ? `/parc/arborescence/${item.level?.building?.site?.id || item.level?.building?.siteId}/${item.level?.buildingId}/${item.levelId}/${item.id}`
+                              : `/parc/arborescence/${item.id}`
+                          }>
                             <button className="p-2 hover:bg-gray-100 rounded" title="Consulter">
                               <Eye className="w-4 h-4" />
                             </button>

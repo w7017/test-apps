@@ -446,3 +446,159 @@ export const deleteEquipment = async (id: string) => {
     await prisma.$disconnect();
   }
 };
+
+export const getEquipmentsByLevelId = async (levelId: string) => {
+  try {
+    const equipments = await prisma.equipment.findMany({
+      where: { 
+        location: {
+          levelId: levelId
+        }
+      },
+      include: {
+        location: {
+          include: {
+            level: {
+              include: {
+                building: {
+                  include: {
+                    site: {
+                      include: {
+                        client: true
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        audits: true
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+    return equipments;
+  } catch (error: any) {
+    throw new Error(`Database error: ${error.message}`);
+  }
+};
+
+export const getEquipmentsByClientId = async (clientId: string) => {
+  try {
+    const equipments = await prisma.equipment.findMany({
+      where: { 
+        location: {
+          level: {
+            building: {
+              site: {
+                clientId: clientId
+              }
+            }
+          }
+        }
+      },
+      include: {
+        location: {
+          include: {
+            level: {
+              include: {
+                building: {
+                  include: {
+                    site: {
+                      include: {
+                        client: true
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        audits: true
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+    return equipments;
+  } catch (error: any) {
+    throw new Error(`Database error: ${error.message}`);
+  }
+};
+
+export const getEquipmentsBySiteId = async (siteId: string) => {
+  try {
+    const equipments = await prisma.equipment.findMany({
+      where: { 
+        location: {
+          level: {
+            building: {
+              siteId: siteId
+            }
+          }
+        }
+      },
+      include: {
+        location: {
+          include: {
+            level: {
+              include: {
+                building: {
+                  include: {
+                    site: {
+                      include: {
+                        client: true
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        audits: true
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+    return equipments;
+  } catch (error: any) {
+    throw new Error(`Database error: ${error.message}`);
+  }
+};
+
+export const getEquipmentsByBuildingId = async (buildingId: string) => {
+  try {
+    const equipments = await prisma.equipment.findMany({
+      where: { 
+        location: {
+          level: {
+            buildingId: buildingId
+          }
+        }
+      },
+      include: {
+        location: {
+          include: {
+            level: {
+              include: {
+                building: {
+                  include: {
+                    site: {
+                      include: {
+                        client: true
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        audits: true
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+    return equipments;
+  } catch (error: any) {
+    throw new Error(`Database error: ${error.message}`);
+  }
+};

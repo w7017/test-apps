@@ -112,6 +112,10 @@ export const addSite = async (data: {
 };
 
 export const modifySite = async (id: string, data: {
+  address: any;
+  codeClient: any;
+  codeAffaire: any;
+  codeContrat: any;
   name?: string;
   image?: string;
 }): Promise<Site> => {

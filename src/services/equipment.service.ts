@@ -6,7 +6,11 @@ import {
   getEquipmentsByLocationId, 
   createEquipment, 
   updateEquipment, 
-  deleteEquipment 
+  deleteEquipment, 
+  getEquipmentsByLevelId,
+  getEquipmentsByBuildingId,
+  getEquipmentsBySiteId,
+  getEquipmentsByClientId
 } from "@/repositories/equipment.repository";
 
 export const fetchEquipmentById = async (id: string): Promise<Equipment> => {
@@ -211,4 +215,32 @@ export const removeEquipment = async (id: string): Promise<Equipment> => {
     console.error("Service: removeEquipment - Error:", error);
     throw error;
   }
+};
+
+export const fetchEquipmentsByLevelId = async (levelId: string) => {
+  if (!levelId || typeof levelId !== "string" || levelId.trim().length === 0) {
+    throw new Error("Level ID is required and must be a non-empty string.");
+  }
+  return await getEquipmentsByLevelId(levelId);
+};
+
+export const fetchEquipmentsByBuildingId = async (buildingId: string) => {
+  if (!buildingId || typeof buildingId !== "string" || buildingId.trim().length === 0) {
+    throw new Error("Building ID is required and must be a non-empty string.");
+  }
+  return await getEquipmentsByBuildingId(buildingId);
+};
+
+export const fetchEquipmentsBySiteId = async (siteId: string) => {
+  if (!siteId || typeof siteId !== "string" || siteId.trim().length === 0) {
+    throw new Error("Site ID is required and must be a non-empty string.");
+  }
+  return await getEquipmentsBySiteId(siteId);
+};
+
+export const fetchEquipmentsByClientId = async (clientId: string) => {
+  if (!clientId || typeof clientId !== "string" || clientId.trim().length === 0) {
+    throw new Error("Client ID is required and must be a non-empty string.");
+  }
+  return await getEquipmentsByClientId(clientId);
 };

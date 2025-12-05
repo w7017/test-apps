@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   PlusCircle,
   Edit,
@@ -17,6 +18,8 @@ import {
   Loader2,
   MapPin,
   Download,
+  Filter,
+  X,
 } from 'lucide-react';
 
 const HIERARCHY_CONFIG = {
@@ -25,28 +28,32 @@ const HIERARCHY_CONFIG = {
     singular: 'Site',
     icon: Home,
     apiEndpoint: '/api/sites',
-    columns: ['Image', 'Nom', 'Adresse', 'Code Client', 'Code Affaire', 'Code Contrat', 'Bâtiments', 'Actions'],
+    columns: ['Image', 'Nom', 'Adresse', 'Code Client', 'Code Affaire', 'Code Contrat', 'Sous-niveaux', 'Actions'],
+    filters: [],
   },
   batiments: {
     title: 'Bâtiments',
     singular: 'Bâtiment',
     icon: Building,
     apiEndpoint: '/api/buildings',
-    columns: ['Image', 'Nom', 'Site', 'Niveaux', 'Actions'],
+    columns: ['Image', 'Nom', 'Site', 'Sous-niveaux', 'Actions'],
+    filters: ['site'],
   },
   niveaux: {
     title: 'Niveaux',
     singular: 'Niveau',
     icon: Layers,
     apiEndpoint: '/api/levels',
-    columns: ['Image', 'Nom', 'Bâtiment', 'Site', 'Locaux', 'Actions'],
+    columns: ['Image', 'Nom', 'Bâtiment', 'Site', 'Sous-niveaux', 'Actions'],
+    filters: ['site', 'building'],
   },
   locaux: {
     title: 'Locaux',
     singular: 'Local',
     icon: DoorOpen,
     apiEndpoint: '/api/locations',
-    columns: ['Image', 'Nom', 'Niveau', 'Bâtiment', 'Site', 'Équipements', 'Actions'],
+    columns: ['Image', 'Nom', 'Niveau', 'Bâtiment', 'Site', 'Sous-niveaux', 'Actions'],
+    filters: ['site', 'building', 'level'],
   },
   equipements: {
     title: 'Équipements',
@@ -54,10 +61,11 @@ const HIERARCHY_CONFIG = {
     icon: Server,
     apiEndpoint: '/api/equipments',
     columns: ['Image', 'Code', 'Libellé', 'Type', 'Marque', 'Statut', 'Local', 'Actions'],
+    filters: ['site', 'building', 'level', 'location'],
   },
 };
 
-function SiteFormDialog({ site, onSave, trigger, selectedClient }) {
+function SiteFormDialog({ site, onSave, trigger, selectedClient }: any) {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -131,7 +139,7 @@ function SiteFormDialog({ site, onSave, trigger, selectedClient }) {
       const savedSite = await response.json();
       onSave(savedSite);
       setIsOpen(false);
-    } catch (error : any) {
+    } catch (error: any) {
       console.error('Error saving site:', error);
       setError(error?.message || 'Une erreur est survenue.');
     } finally {
@@ -256,7 +264,7 @@ function SiteFormDialog({ site, onSave, trigger, selectedClient }) {
   );
 }
 
-function DeleteConfirmDialog({ item, itemType, onDelete, trigger } : any) {
+function DeleteConfirmDialog({ item, itemType, onDelete, trigger }: any) {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -268,7 +276,7 @@ function DeleteConfirmDialog({ item, itemType, onDelete, trigger } : any) {
     try {
       await onDelete(item.id);
       setIsOpen(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting item:', error);
       setError(error.message || 'Une erreur est survenue.');
     } finally {
@@ -326,35 +334,123 @@ function DeleteConfirmDialog({ item, itemType, onDelete, trigger } : any) {
   );
 }
 
-export default function HierarchyListPage({ listType, selectedClient } : any) {
+export default function HierarchyListPage({ 
+  listType, 
+  selectedClient,
+  filters = {} // { siteId, buildingId, levelId, locationId }
+}: any) {
+  const router = useRouter();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  
+  // Filter options state
+  const [sites, setSites] = useState([]);
+  const [buildings, setBuildings] = useState([]);
+  const [levels, setLevels] = useState([]);
+  const [locations, setLocations] = useState([]);
+  
+  // Active filters
+  const [activeFilters, setActiveFilters] = useState({
+    siteId: filters.siteId || '',
+    buildingId: filters.buildingId || '',
+    levelId: filters.levelId || '',
+    locationId: filters.locationId || '',
+  });
 
   const config = HIERARCHY_CONFIG[listType];
   const IconComponent = config?.icon || Home;
+
+  // Fetch filter options
+  useEffect(() => {
+    if (selectedClient) {
+      fetchFilterOptions();
+    }
+  }, [selectedClient, activeFilters.siteId, activeFilters.buildingId, activeFilters.levelId]);
 
   useEffect(() => {
     if (selectedClient) {
       fetchItems();
     }
-  }, [selectedClient, listType]);
+  }, [selectedClient, listType, activeFilters]);
+
+  const fetchFilterOptions = async () => {
+    try {
+      // Fetch sites
+      if (config.filters.includes('site')) {
+        const sitesRes = await fetch(`/api/sites/client/${selectedClient.id}`);
+        if (sitesRes.ok) {
+          const sitesData = await sitesRes.json();
+          setSites(sitesData);
+        }
+      }
+
+      // Fetch buildings (filtered by site if selected)
+      if (config.filters.includes('building')) {
+        let buildingsEndpoint = `/api/buildings/client/${selectedClient.id}`;
+        if (activeFilters.siteId) {
+          buildingsEndpoint = `/api/buildings/site/${activeFilters.siteId}`;
+        }
+        const buildingsRes = await fetch(buildingsEndpoint);
+        if (buildingsRes.ok) {
+          const buildingsData = await buildingsRes.json();
+          setBuildings(buildingsData);
+        }
+      }
+
+      // Fetch levels (filtered by building if selected)
+      if (config.filters.includes('level')) {
+        let levelsEndpoint = `/api/levels/client/${selectedClient.id}`;
+        if (activeFilters.buildingId) {
+          levelsEndpoint = `/api/levels/building/${activeFilters.buildingId}`;
+        }
+        const levelsRes = await fetch(levelsEndpoint);
+        if (levelsRes.ok) {
+          const levelsData = await levelsRes.json();
+          setLevels(levelsData);
+        }
+      }
+
+      // Fetch locations (filtered by level if selected)
+      if (config.filters.includes('location')) {
+        let locationsEndpoint = `/api/locations/client/${selectedClient.id}`;
+        if (activeFilters.levelId) {
+          locationsEndpoint = `/api/locations/level/${activeFilters.levelId}`;
+        }
+        const locationsRes = await fetch(locationsEndpoint);
+        if (locationsRes.ok) {
+          const locationsData = await locationsRes.json();
+          setLocations(locationsData);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching filter options:', error);
+    }
+  };
 
   const fetchItems = async () => {
     if (!selectedClient) return;
     
     setLoading(true);
     try {
-      const endpoint = listType === 'sites' 
-        ? `/api/sites/client/${selectedClient.id}`
-        : `${config.apiEndpoint}/client/${selectedClient.id}`;
+      let endpoint = `${config.apiEndpoint}/client/${selectedClient.id}`;
+      
+      // Build filtered endpoint based on active filters
+      if (activeFilters.locationId) {
+        endpoint = `${config.apiEndpoint}/location/${activeFilters.locationId}`;
+      } else if (activeFilters.levelId) {
+        endpoint = `${config.apiEndpoint}/level/${activeFilters.levelId}`;
+      } else if (activeFilters.buildingId) {
+        endpoint = `${config.apiEndpoint}/building/${activeFilters.buildingId}`;
+      } else if (activeFilters.siteId) {
+        endpoint = `${config.apiEndpoint}/site/${activeFilters.siteId}`;
+      }
       
       const response = await fetch(endpoint);
       if (!response.ok) throw new Error('Failed to fetch items');
       
       const data = await response.json();
-      console.log(data)
       setItems(data);
     } catch (error) {
       console.error('Error fetching items:', error);
@@ -363,8 +459,44 @@ export default function HierarchyListPage({ listType, selectedClient } : any) {
     }
   };
 
+  const handleFilterChange = (filterType: string, value: string) => {
+    const newFilters = { ...activeFilters };
+    
+    // Reset dependent filters when parent changes
+    if (filterType === 'siteId') {
+      newFilters.siteId = value;
+      newFilters.buildingId = '';
+      newFilters.levelId = '';
+      newFilters.locationId = '';
+    } else if (filterType === 'buildingId') {
+      newFilters.buildingId = value;
+      newFilters.levelId = '';
+      newFilters.locationId = '';
+    } else if (filterType === 'levelId') {
+      newFilters.levelId = value;
+      newFilters.locationId = '';
+    } else if (filterType === 'locationId') {
+      newFilters.locationId = value;
+    }
+    
+    setActiveFilters(newFilters);
+  };
+
+  const clearFilters = () => {
+    setActiveFilters({
+      siteId: '',
+      buildingId: '',
+      levelId: '',
+      locationId: '',
+    });
+  };
+
+  const getActiveFilterCount = () => {
+    return Object.values(activeFilters).filter(v => v).length;
+  };
+
   const filteredItems = useMemo(() => {
-    return items.filter((item : any) => {
+    return items.filter((item: any) => {
       const searchLower = searchTerm.toLowerCase();
       const searchMatch = 
         (item.name?.toLowerCase() || '').includes(searchLower) ||
@@ -379,7 +511,7 @@ export default function HierarchyListPage({ listType, selectedClient } : any) {
     });
   }, [items, searchTerm, statusFilter]);
 
-  const handleDelete = async (itemId : any) => {
+  const handleDelete = async (itemId: any) => {
     const response = await fetch(`${config.apiEndpoint}/${itemId}`, {
       method: 'DELETE',
     });
@@ -392,7 +524,7 @@ export default function HierarchyListPage({ listType, selectedClient } : any) {
     setItems(items.filter(item => item.id !== itemId));
   };
 
-  const handleSave = (savedItem : any) => {
+  const handleSave = (savedItem: any) => {
     const existingIndex = items.findIndex(item => item.id === savedItem.id);
     if (existingIndex >= 0) {
       const updatedItems = [...items];
@@ -404,7 +536,7 @@ export default function HierarchyListPage({ listType, selectedClient } : any) {
   };
 
   const exportToCSV = () => {
-    const headers = config.columns.filter((col : any) => col !== 'Image' && col !== 'Actions').join(',');
+    const headers = config.columns.filter((col: any) => col !== 'Image' && col !== 'Actions').join(',');
     const rows = filteredItems.map(item => {
       if (listType === 'sites') {
         return `${item.name},"${item.address || ''}","${item.codeClient || ''}","${item.codeAffaire || ''}","${item.codeContrat || ''}",${item.buildings?.length || 0}`;
@@ -432,6 +564,8 @@ export default function HierarchyListPage({ listType, selectedClient } : any) {
       </div>
     );
   }
+
+  const activeFilterCount = getActiveFilterCount();
 
   return (
     <div className="p-6 space-y-6">
@@ -468,6 +602,117 @@ export default function HierarchyListPage({ listType, selectedClient } : any) {
           )}
         </div>
       </div>
+
+      {/* Hierarchical Filters */}
+      {config.filters.length > 0 && (
+        <div className="bg-white rounded-lg shadow p-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-gray-600" />
+              <span className="font-medium">Filtres hiérarchiques</span>
+              {activeFilterCount > 0 && (
+                <span className="px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded-full">
+                  {activeFilterCount}
+                </span>
+              )}
+            </div>
+            {activeFilterCount > 0 && (
+              <button
+                onClick={clearFilters}
+                className="text-sm text-gray-600 hover:text-gray-800 flex items-center gap-1"
+              >
+                <X className="h-3 w-3" />
+                Réinitialiser
+              </button>
+            )}
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+            {config.filters.includes('site') && (
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">
+                  Site
+                </label>
+                <select
+                  value={activeFilters.siteId}
+                  onChange={(e) => handleFilterChange('siteId', e.target.value)}
+                  className="w-full px-3 py-2 text-sm border rounded-md"
+                >
+                  <option value="">Tous les sites</option>
+                  {sites.map((site: any) => (
+                    <option key={site.id} value={site.id}>
+                      {site.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {config.filters.includes('building') && (
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">
+                  Bâtiment
+                </label>
+                <select
+                  value={activeFilters.buildingId}
+                  onChange={(e) => handleFilterChange('buildingId', e.target.value)}
+                  className="w-full px-3 py-2 text-sm border rounded-md"
+                  disabled={!activeFilters.siteId && buildings.length === 0}
+                >
+                  <option value="">Tous les bâtiments</option>
+                  {buildings.map((building: any) => (
+                    <option key={building.id} value={building.id}>
+                      {building.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {config.filters.includes('level') && (
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">
+                  Niveau
+                </label>
+                <select
+                  value={activeFilters.levelId}
+                  onChange={(e) => handleFilterChange('levelId', e.target.value)}
+                  className="w-full px-3 py-2 text-sm border rounded-md"
+                  disabled={!activeFilters.buildingId && levels.length === 0}
+                >
+                  <option value="">Tous les niveaux</option>
+                  {levels.map((level: any) => (
+                    <option key={level.id} value={level.id}>
+                      {level.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {config.filters.includes('location') && (
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">
+                  Local
+                </label>
+                <select
+                  value={activeFilters.locationId}
+                  onChange={(e) => handleFilterChange('locationId', e.target.value)}
+                  className="w-full px-3 py-2 text-sm border rounded-md"
+                  disabled={!activeFilters.levelId && locations.length === 0}
+                >
+                  <option value="">Tous les locaux</option>
+                  {locations.map((location: any) => (
+                    <option key={location.id} value={location.id}>
+                      {location.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="bg-white rounded-lg shadow">
         <div className="p-4 border-b">
@@ -545,15 +790,63 @@ export default function HierarchyListPage({ listType, selectedClient } : any) {
                           <td className="px-4 py-3 text-sm">{item.codeClient || '-'}</td>
                           <td className="px-4 py-3 text-sm">{item.codeAffaire || '-'}</td>
                           <td className="px-4 py-3 text-sm">{item.codeContrat || '-'}</td>
-                          <td className="px-4 py-3 text-sm">{item.buildings?.length || 0}</td>
+                          <td className="px-4 py-3">
+                            <div className="flex flex-wrap gap-2">
+                              <Link href={`/parc/arborescence/batiments?siteId=${item.id}`}>
+                                <button className="flex items-center gap-1 px-2 py-1 text-xs bg-blue-50 text-blue-700 rounded hover:bg-blue-100 transition-colors">
+                                  <Building className="w-3 h-3" />
+                                  <span>{item.buildings?.length || 0} bâtiment{(item.buildings?.length || 0) > 1 ? 's' : ''}</span>
+                                </button>
+                              </Link>
+                              <Link href={`/parc/arborescence/niveaux?siteId=${item.id}`}>
+                                <button className="flex items-center gap-1 px-2 py-1 text-xs bg-purple-50 text-purple-700 rounded hover:bg-purple-100 transition-colors">
+                                  <Layers className="w-3 h-3" />
+                                  <span>{item.buildings?.reduce((sum: number, b: any) => sum + (b.levels?.length || 0), 0) || 0} niveau{(item.buildings?.reduce((sum: number, b: any) => sum + (b.levels?.length || 0), 0) || 0) > 1 ? 'x' : ''}</span>
+                                </button>
+                              </Link>
+                              <Link href={`/parc/arborescence/locaux?siteId=${item.id}`}>
+                                <button className="flex items-center gap-1 px-2 py-1 text-xs bg-green-50 text-green-700 rounded hover:bg-green-100 transition-colors">
+                                  <DoorOpen className="w-3 h-3" />
+                                  <span>{item.buildings?.reduce((sum: number, b: any) => sum + (b.levels?.reduce((s: number, l: any) => s + (l.locations?.length || 0), 0) || 0), 0) || 0} local{(item.buildings?.reduce((sum: number, b: any) => sum + (b.levels?.reduce((s: number, l: any) => s + (l.locations?.length || 0), 0) || 0), 0) || 0) > 1 ? 'aux' : ''}</span>
+                                </button>
+                              </Link>
+                              <Link href={`/parc/arborescence/equipements?siteId=${item.id}`}>
+                                <button className="flex items-center gap-1 px-2 py-1 text-xs bg-orange-50 text-orange-700 rounded hover:bg-orange-100 transition-colors">
+                                  <Server className="w-3 h-3" />
+                                  <span>{item.buildings?.reduce((sum: number, b: any) => sum + (b.levels?.reduce((s: number, l: any) => s + (l.locations?.reduce((ss: number, loc: any) => ss + (loc.equipments?.length || 0), 0) || 0), 0) || 0), 0) || 0} équip.</span>
+                                </button>
+                              </Link>
+                            </div>
+                          </td>
                         </>
                       )}
-                      
+
                       {listType === 'batiments' && (
                         <>
                           <td className="px-4 py-3 font-medium">{item.name}</td>
                           <td className="px-4 py-3 text-sm">{item.site?.name || '-'}</td>
-                          <td className="px-4 py-3 text-sm">{item.levels?.length || 0}</td>
+                          <td className="px-4 py-3">
+                            <div className="flex flex-wrap gap-2">
+                              <Link href={`/parc/arborescence/niveaux?buildingId=${item.id}`}>
+                                <button className="flex items-center gap-1 px-2 py-1 text-xs bg-purple-50 text-purple-700 rounded hover:bg-purple-100 transition-colors">
+                                  <Layers className="w-3 h-3" />
+                                  <span>{item.levels?.length || 0} niveau{(item.levels?.length || 0) > 1 ? 'x' : ''}</span>
+                                </button>
+                              </Link>
+                              <Link href={`/parc/arborescence/locaux?buildingId=${item.id}`}>
+                                <button className="flex items-center gap-1 px-2 py-1 text-xs bg-green-50 text-green-700 rounded hover:bg-green-100 transition-colors">
+                                  <DoorOpen className="w-3 h-3" />
+                                  <span>{item.levels?.reduce((sum: number, l: any) => sum + (l.locations?.length || 0), 0) || 0} local{(item.levels?.reduce((sum: number, l: any) => sum + (l.locations?.length || 0), 0) || 0) > 1 ? 'aux' : ''}</span>
+                                </button>
+                              </Link>
+                              <Link href={`/parc/arborescence/equipements?buildingId=${item.id}`}>
+                                <button className="flex items-center gap-1 px-2 py-1 text-xs bg-orange-50 text-orange-700 rounded hover:bg-orange-100 transition-colors">
+                                  <Server className="w-3 h-3" />
+                                  <span>{item.levels?.reduce((sum: number, l: any) => sum + (l.locations?.reduce((s: number, loc: any) => s + (loc.equipments?.length || 0), 0) || 0), 0) || 0} équip.</span>
+                                </button>
+                              </Link>
+                            </div>
+                          </td>
                         </>
                       )}
 
@@ -562,20 +855,44 @@ export default function HierarchyListPage({ listType, selectedClient } : any) {
                           <td className="px-4 py-3 font-medium">{item.name}</td>
                           <td className="px-4 py-3 text-sm">{item.building?.name || '-'}</td>
                           <td className="px-4 py-3 text-sm">{item.building?.site?.name || '-'}</td>
-                          <td className="px-4 py-3 text-sm">{item.locations?.length || 0}</td>
+                          <td className="px-4 py-3">
+                            <div className="flex flex-wrap gap-2">
+                              <Link href={`/parc/arborescence/locaux?levelId=${item.id}`}>
+                                <button className="flex items-center gap-1 px-2 py-1 text-xs bg-green-50 text-green-700 rounded hover:bg-green-100 transition-colors">
+                                  <DoorOpen className="w-3 h-3" />
+                                  <span>{item.locations?.length || 0} local{(item.locations?.length || 0) > 1 ? 'aux' : ''}</span>
+                                </button>
+                              </Link>
+                              <Link href={`/parc/arborescence/equipements?levelId=${item.id}`}>
+                                <button className="flex items-center gap-1 px-2 py-1 text-xs bg-orange-50 text-orange-700 rounded hover:bg-orange-100 transition-colors">
+                                  <Server className="w-3 h-3" />
+                                  <span>{item.locations?.reduce((sum: number, loc: any) => sum + (loc.equipments?.length || 0), 0) || 0} équip.</span>
+                                </button>
+                              </Link>
+                            </div>
+                          </td>
                         </>
                       )}
-                      
+
                       {listType === 'locaux' && (
                         <>
                           <td className="px-4 py-3 font-medium">{item.name}</td>
                           <td className="px-4 py-3 text-sm">{item.level?.name || '-'}</td>
                           <td className="px-4 py-3 text-sm">{item.level?.building?.name || '-'}</td>
                           <td className="px-4 py-3 text-sm">{item.level?.building?.site?.name || '-'}</td>
-                          <td className="px-4 py-3 text-sm">{item.equipments?.length || 0}</td>
+                          <td className="px-4 py-3">
+                            <div className="flex flex-wrap gap-2">
+                              <Link href={`/parc/arborescence/equipements?locationId=${item.id}`}>
+                                <button className="flex items-center gap-1 px-2 py-1 text-xs bg-orange-50 text-orange-700 rounded hover:bg-orange-100 transition-colors">
+                                  <Server className="w-3 h-3" />
+                                  <span>{item.equipments?.length || 0} équip.</span>
+                                </button>
+                              </Link>
+                            </div>
+                          </td>
                         </>
                       )}
-                      
+
                       {listType === 'equipements' && (
                         <>
                           <td className="px-4 py-3 font-mono text-sm">{item.code}</td>
@@ -600,7 +917,7 @@ export default function HierarchyListPage({ listType, selectedClient } : any) {
                           </td>
                         </>
                       )}
-                      
+
                       <td className="px-4 py-3 text-right">
                         <div className="flex justify-end gap-1">
                           <Link href={
@@ -643,60 +960,58 @@ export default function HierarchyListPage({ listType, selectedClient } : any) {
                         </div>
                       </td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div className="text-center py-12 border-2 border-dashed rounded-lg">
-              <IconComponent className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-              <p className="text-gray-600 mb-4">
-                Aucun {config.singular.toLowerCase()} trouvé
-              </p>
-              {searchTerm && (
-                <button
-                  onClick={() => setSearchTerm('')}
-                  className="px-4 py-2 border rounded-md hover:bg-gray-50"
-                >
-                  Réinitialiser la recherche
-                </button>
-              )}
-            </div>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+      ) : (
+        <div className="text-center py-12 border-2 border-dashed rounded-lg">
+          <IconComponent className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+          <p className="text-gray-600 mb-4">
+            Aucun {config.singular.toLowerCase()} trouvé
+          </p>
+          {searchTerm && (
+            <button
+              onClick={() => setSearchTerm('')}
+              className="px-4 py-2 border rounded-md hover:bg-gray-50"
+            >
+              Réinitialiser la recherche
+            </button>
           )}
         </div>
-      </div>
-
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-bold mb-4">Statistiques</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="text-center p-4 border rounded-lg">
-            <div className="text-3xl font-bold">{filteredItems.length}</div>
-            <div className="text-sm text-gray-600">Total</div>
-          </div>
-          {listType === 'equipements' && (
-            <>
-              <div className="text-center p-4 border rounded-lg">
-                <div className="text-3xl font-bold text-green-600">
-                  {filteredItems.filter(i => i.statut === 'En service').length}
-                </div>
-                <div className="text-sm text-gray-600">En service</div>
-              </div>
-              <div className="text-center p-4 border rounded-lg">
-                <div className="text-3xl font-bold text-yellow-600">
-                  {filteredItems.filter(i => i.statut === 'Alerte').length}
-                </div>
-                <div className="text-sm text-gray-600">En alerte</div>
-              </div>
-              <div className="text-center p-4 border rounded-lg">
-                <div className="text-3xl font-bold text-red-600">
-                  {filteredItems.filter(i => i.statut === 'Hors service').length}
-                </div>
-                <div className="text-sm text-gray-600">Hors service</div>
-              </div>
-            </>
-          )}
-        </div>
-      </div>
+      )}
     </div>
-  );
-}
+  </div>
+
+  <div className="bg-white rounded-lg shadow p-6">
+    <h3 className="text-lg font-bold mb-4">Statistiques</h3>
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="text-center p-4 border rounded-lg">
+        <div className="text-3xl font-bold">{filteredItems.length}</div>
+        <div className="text-sm text-gray-600">Total</div>
+      </div>
+      {listType === 'equipements' && (
+        <>
+          <div className="text-center p-4 border rounded-lg">
+            <div className="text-3xl font-bold text-green-600">
+              {filteredItems.filter((i: any) => i.statut === 'En service').length}
+            </div>
+            <div className="text-sm text-gray-600">En service</div>
+          </div>
+          <div className="text-center p-4 border rounded-lg">
+            <div className="text-3xl font-bold text-yellow-600">
+              {filteredItems.filter((i: any) => i.statut === 'Alerte').length}
+            </div>
+            <div className="text-sm text-gray-600">En alerte</div>
+          </div>
+          <div className="text-center p-4 border rounded-lg">
+            <div className="text-3xl font-bold text-red-600">
+              {filteredItems.filter((i: any) => i.statut === 'Hors service').length}
+            </div>
+            <div className="text-sm text-gray-600">Hors service</div>
+          </div>
+        </>
+      )}
+    </div>
+  </div>
+</div>)}

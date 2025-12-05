@@ -132,6 +132,10 @@ export const createSite = async (data: {
 };
 
 export const updateSite = async (id: string, data: {
+  address: any;
+  codeClient: any;
+  codeAffaire: any;
+  codeContrat: any;
   name?: string;
   image?: string;
 }) => {

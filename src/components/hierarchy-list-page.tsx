@@ -337,7 +337,7 @@ function DeleteConfirmDialog({ item, itemType, onDelete, trigger }: any) {
 export default function HierarchyListPage({ 
   listType, 
   selectedClient,
-  filters = {} // { siteId, buildingId, levelId, locationId }
+  filters = {}
 }: any) {
   const router = useRouter();
   const [items, setItems] = useState([]);
@@ -345,13 +345,11 @@ export default function HierarchyListPage({
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   
-  // Filter options state
   const [sites, setSites] = useState([]);
   const [buildings, setBuildings] = useState([]);
   const [levels, setLevels] = useState([]);
   const [locations, setLocations] = useState([]);
   
-  // Active filters
   const [activeFilters, setActiveFilters] = useState({
     siteId: filters.siteId || '',
     buildingId: filters.buildingId || '',
@@ -362,7 +360,27 @@ export default function HierarchyListPage({
   const config = HIERARCHY_CONFIG[listType];
   const IconComponent = config?.icon || Home;
 
-  // Fetch filter options
+  // Get selected entities for form dialogs
+  const selectedSite = useMemo(() => 
+    sites.find((s: any) => s.id === activeFilters.siteId), 
+    [sites, activeFilters.siteId]
+  );
+  
+  const selectedBuilding = useMemo(() => 
+    buildings.find((b: any) => b.id === activeFilters.buildingId), 
+    [buildings, activeFilters.buildingId]
+  );
+  
+  const selectedLevel = useMemo(() => 
+    levels.find((l: any) => l.id === activeFilters.levelId), 
+    [levels, activeFilters.levelId]
+  );
+  
+  const selectedLocation = useMemo(() => 
+    locations.find((loc: any) => loc.id === activeFilters.locationId), 
+    [locations, activeFilters.locationId]
+  );
+
   useEffect(() => {
     if (selectedClient) {
       fetchFilterOptions();
@@ -377,7 +395,6 @@ export default function HierarchyListPage({
 
   const fetchFilterOptions = async () => {
     try {
-      // Fetch sites
       if (config.filters.includes('site')) {
         const sitesRes = await fetch(`/api/sites/client/${selectedClient.id}`);
         if (sitesRes.ok) {
@@ -386,7 +403,6 @@ export default function HierarchyListPage({
         }
       }
 
-      // Fetch buildings (filtered by site if selected)
       if (config.filters.includes('building')) {
         let buildingsEndpoint = `/api/buildings/client/${selectedClient.id}`;
         if (activeFilters.siteId) {
@@ -399,7 +415,6 @@ export default function HierarchyListPage({
         }
       }
 
-      // Fetch levels (filtered by building if selected)
       if (config.filters.includes('level')) {
         let levelsEndpoint = `/api/levels/client/${selectedClient.id}`;
         if (activeFilters.buildingId) {
@@ -412,7 +427,6 @@ export default function HierarchyListPage({
         }
       }
 
-      // Fetch locations (filtered by level if selected)
       if (config.filters.includes('location')) {
         let locationsEndpoint = `/api/locations/client/${selectedClient.id}`;
         if (activeFilters.levelId) {
@@ -436,7 +450,6 @@ export default function HierarchyListPage({
     try {
       let endpoint = `${config.apiEndpoint}/client/${selectedClient.id}`;
       
-      // Build filtered endpoint based on active filters
       if (activeFilters.locationId) {
         endpoint = `${config.apiEndpoint}/location/${activeFilters.locationId}`;
       } else if (activeFilters.levelId) {
@@ -462,7 +475,6 @@ export default function HierarchyListPage({
   const handleFilterChange = (filterType: string, value: string) => {
     const newFilters = { ...activeFilters };
     
-    // Reset dependent filters when parent changes
     if (filterType === 'siteId') {
       newFilters.siteId = value;
       newFilters.buildingId = '';
@@ -566,6 +578,12 @@ export default function HierarchyListPage({
   }
 
   const activeFilterCount = getActiveFilterCount();
+  
+  // Determine if we can add new items based on required parent selection
+  const canAddBuilding = listType === 'batiments' && selectedSite;
+  const canAddLevel = listType === 'niveaux' && selectedBuilding;
+  const canAddLocation = listType === 'locaux' && selectedLevel;
+  const canAddEquipment = listType === 'equipements' && selectedLocation;
 
   return (
     <div className="p-6 space-y-6">
@@ -587,6 +605,7 @@ export default function HierarchyListPage({
             <Download className="h-4 w-4" />
             Exporter CSV
           </button>
+          
           {listType === 'sites' && (
             <SiteFormDialog
               site={null}
@@ -599,6 +618,106 @@ export default function HierarchyListPage({
                 </button>
               }
             />
+          )}
+          
+          {listType === 'batiments' && (
+            canAddBuilding ? (
+              <BuildingFormDialog
+                building={null}
+                onSave={handleSave}
+                selectedSite={selectedSite}
+                trigger={
+                  <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center gap-2">
+                    <PlusCircle className="h-4 w-4" />
+                    Ajouter un {config.singular}
+                  </button>
+                }
+              />
+            ) : (
+              <button 
+                disabled
+                className="px-4 py-2 bg-gray-300 text-gray-500 rounded-md cursor-not-allowed flex items-center gap-2"
+                title="Sélectionnez un site pour ajouter un bâtiment"
+              >
+                <PlusCircle className="h-4 w-4" />
+                Ajouter un {config.singular}
+              </button>
+            )
+          )}
+          
+          {listType === 'niveaux' && (
+            canAddLevel ? (
+              <LevelFormDialog
+                level={null}
+                onSave={handleSave}
+                selectedBuilding={selectedBuilding}
+                trigger={
+                  <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center gap-2">
+                    <PlusCircle className="h-4 w-4" />
+                    Ajouter un {config.singular}
+                  </button>
+                }
+              />
+            ) : (
+              <button 
+                disabled
+                className="px-4 py-2 bg-gray-300 text-gray-500 rounded-md cursor-not-allowed flex items-center gap-2"
+                title="Sélectionnez un bâtiment pour ajouter un niveau"
+              >
+                <PlusCircle className="h-4 w-4" />
+                Ajouter un {config.singular}
+              </button>
+            )
+          )}
+          
+          {listType === 'locaux' && (
+            canAddLocation ? (
+              <LocationFormDialog
+                location={null}
+                onSave={handleSave}
+                selectedLevel={selectedLevel}
+                trigger={
+                  <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center gap-2">
+                    <PlusCircle className="h-4 w-4" />
+                    Ajouter un {config.singular}
+                  </button>
+                }
+              />
+            ) : (
+              <button 
+                disabled
+                className="px-4 py-2 bg-gray-300 text-gray-500 rounded-md cursor-not-allowed flex items-center gap-2"
+                title="Sélectionnez un niveau pour ajouter un local"
+              >
+                <PlusCircle className="h-4 w-4" />
+                Ajouter un {config.singular}
+              </button>
+            )
+          )}
+          
+          {listType === 'equipements' && (
+            canAddEquipment ? (
+              <EquipmentFormDialog
+                equipment={null}
+                onSave={handleSave}
+                selectedLocation={selectedLocation}
+                trigger={
+                  <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center gap-2">
+                    <PlusCircle className="h-4 w-4" />
+                    Ajouter un {config.singular}
+                  </button>
+                }
+              />
+            ) : (
+              <button 
+                disabled
+                className="px-4 py-2 bg-gray-300 text-gray-500 rounded-md cursor-not-allowed flex items-center gap-2"
+                title="Sélectionnez un local pour ajouter un équipement"
+              >
+                <PlusCircle className="h-4 w-4" />
+                Ajouter un {config.singular}
+              </button>
+            )
           )}
         </div>
       </div>
@@ -751,7 +870,7 @@ export default function HierarchyListPage({
           ) : filteredItems.length > 0 ? (
             <div className="border rounded-md overflow-hidden">
               <table className="w-full">
-                <thead className="bg-gray-50">
+              <thead className="bg-gray-50">
                   <tr>
                     {config.columns.map((col, idx) => (
                       <th
@@ -947,6 +1066,54 @@ export default function HierarchyListPage({
                               }
                             />
                           )}
+                          {listType === 'batiments' && (
+                            <BuildingFormDialog
+                              building={item}
+                              onSave={handleSave}
+                              selectedSite={item.site}
+                              trigger={
+                                <button className="p-2 hover:bg-gray-100 rounded" title="Modifier">
+                                  <Edit className="w-4 h-4" />
+                                </button>
+                              }
+                            />
+                          )}
+                          {listType === 'niveaux' && (
+                            <LevelFormDialog
+                              level={item}
+                              onSave={handleSave}
+                              selectedBuilding={item.building}
+                              trigger={
+                                <button className="p-2 hover:bg-gray-100 rounded" title="Modifier">
+                                  <Edit className="w-4 h-4" />
+                                </button>
+                              }
+                            />
+                          )}
+                          {listType === 'locaux' && (
+                            <LocationFormDialog
+                              location={item}
+                              onSave={handleSave}
+                              selectedLevel={item.level}
+                              trigger={
+                                <button className="p-2 hover:bg-gray-100 rounded" title="Modifier">
+                                  <Edit className="w-4 h-4" />
+                                </button>
+                              }
+                            />
+                          )}
+                          {listType === 'equipements' && (
+                            <EquipmentFormDialog
+                              equipment={item}
+                              onSave={handleSave}
+                              selectedLocation={item.location}
+                              trigger={
+                                <button className="p-2 hover:bg-gray-100 rounded" title="Modifier">
+                                  <Edit className="w-4 h-4" />
+                                </button>
+                              }
+                            />
+                          )}
                           <DeleteConfirmDialog
                             item={item}
                             itemType={config.singular}
@@ -960,58 +1127,645 @@ export default function HierarchyListPage({
                         </div>
                       </td>
                     </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-      ) : (
-        <div className="text-center py-12 border-2 border-dashed rounded-lg">
-          <IconComponent className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-          <p className="text-gray-600 mb-4">
-            Aucun {config.singular.toLowerCase()} trouvé
-          </p>
-          {searchTerm && (
-            <button
-              onClick={() => setSearchTerm('')}
-              className="px-4 py-2 border rounded-md hover:bg-gray-50"
-            >
-              Réinitialiser la recherche
-            </button>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="text-center py-12 border-2 border-dashed rounded-lg">
+              <IconComponent className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+              <p className="text-gray-600 mb-4">
+                Aucun {config.singular.toLowerCase()} trouvé
+              </p>
+            </div>
           )}
         </div>
-      )}
-    </div>
-  </div>
-
-  <div className="bg-white rounded-lg shadow p-6">
-    <h3 className="text-lg font-bold mb-4">Statistiques</h3>
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-      <div className="text-center p-4 border rounded-lg">
-        <div className="text-3xl font-bold">{filteredItems.length}</div>
-        <div className="text-sm text-gray-600">Total</div>
       </div>
-      {listType === 'equipements' && (
-        <>
-          <div className="text-center p-4 border rounded-lg">
-            <div className="text-3xl font-bold text-green-600">
-              {filteredItems.filter((i: any) => i.statut === 'En service').length}
-            </div>
-            <div className="text-sm text-gray-600">En service</div>
-          </div>
-          <div className="text-center p-4 border rounded-lg">
-            <div className="text-3xl font-bold text-yellow-600">
-              {filteredItems.filter((i: any) => i.statut === 'Alerte').length}
-            </div>
-            <div className="text-sm text-gray-600">En alerte</div>
-          </div>
-          <div className="text-center p-4 border rounded-lg">
-            <div className="text-3xl font-bold text-red-600">
-              {filteredItems.filter((i: any) => i.statut === 'Hors service').length}
-            </div>
-            <div className="text-sm text-gray-600">Hors service</div>
-          </div>
-        </>
-      )}
+
+      {/* Statistics section */}
+      <div className="bg-white rounded-lg shadow p-6">
+        {/* Stats content */}
+      </div>
     </div>
-  </div>
-</div>)}
+  );
+}
+      
+
+        
+
+function BuildingFormDialog({ building, onSave, trigger, selectedSite }: any) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    image: '',
+  });
+  const [error, setError] = useState('');
+  const isEditing = !!building;
+
+  useEffect(() => {
+    if (isOpen && building) {
+      setFormData({
+        name: building.name || '',
+        image: building.image || '',
+      });
+    } else if (isOpen && !building) {
+      setFormData({
+        name: '',
+        image: '',
+      });
+    }
+  }, [building, isOpen]);
+
+  const handleSave = async () => {
+    if (!formData.name.trim()) {
+      setError('Le nom est requis.');
+      return;
+    }
+
+    setIsLoading(true);
+    setError('');
+    
+    try {
+      const payload = {
+        ...formData,
+        siteId: selectedSite?.id,
+      };
+
+      let response;
+      if (isEditing) {
+        response = await fetch(`/api/buildings/${building.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+      } else {
+        response = await fetch('/api/buildings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+      }
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to save building');
+      }
+
+      const savedBuilding = await response.json();
+      onSave(savedBuilding);
+      setIsOpen(false);
+    } catch (error: any) {
+      console.error('Error saving building:', error);
+      setError(error?.message || 'Une erreur est survenue.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <>
+      <div onClick={() => setIsOpen(true)}>{trigger}</div>
+      
+      {isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
+            <h2 className="text-xl font-bold mb-4">
+              {isEditing ? 'Modifier' : 'Ajouter'} un Bâtiment
+            </h2>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Nom du bâtiment *</label>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-md"
+                  placeholder="Ex: Bâtiment Principal"
+                  disabled={isLoading}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Image URL</label>
+                <input
+                  type="text"
+                  value={formData.image}
+                  onChange={(e) => setFormData({ ...formData, image: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-md"
+                  placeholder="https://example.com/image.jpg"
+                  disabled={isLoading}
+                />
+              </div>
+            </div>
+
+            {error && (
+              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-800 text-sm">
+                {error}
+              </div>
+            )}
+            
+            <div className="flex justify-end gap-2 mt-6">
+              <button
+                onClick={() => setIsOpen(false)}
+                disabled={isLoading}
+                className="px-4 py-2 border rounded-md hover:bg-gray-50"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={isLoading}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
+              >
+                {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+                {isEditing ? 'Sauvegarder' : 'Créer'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+function LevelFormDialog({ level, onSave, trigger, selectedBuilding }: any) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    image: '',
+  });
+  const [error, setError] = useState('');
+  const isEditing = !!level;
+
+  useEffect(() => {
+    if (isOpen && level) {
+      setFormData({
+        name: level.name || '',
+        image: level.image || '',
+      });
+    } else if (isOpen && !level) {
+      setFormData({
+        name: '',
+        image: '',
+      });
+    }
+  }, [level, isOpen]);
+
+  const handleSave = async () => {
+    if (!formData.name.trim()) {
+      setError('Le nom est requis.');
+      return;
+    }
+
+    setIsLoading(true);
+    setError('');
+    
+    try {
+      const payload = {
+        ...formData,
+        buildingId: selectedBuilding?.id,
+      };
+
+      let response;
+      if (isEditing) {
+        response = await fetch(`/api/levels/${level.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+      } else {
+        response = await fetch('/api/levels', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+      }
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to save level');
+      }
+
+      const savedLevel = await response.json();
+      onSave(savedLevel);
+      setIsOpen(false);
+    } catch (error: any) {
+      console.error('Error saving level:', error);
+      setError(error?.message || 'Une erreur est survenue.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <>
+      <div onClick={() => setIsOpen(true)}>{trigger}</div>
+      
+      {isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
+            <h2 className="text-xl font-bold mb-4">
+              {isEditing ? 'Modifier' : 'Ajouter'} un Niveau
+            </h2>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Nom du niveau *</label>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-md"
+                  placeholder="Ex: Rez-de-chaussée"
+                  disabled={isLoading}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Image URL</label>
+                <input
+                  type="text"
+                  value={formData.image}
+                  onChange={(e) => setFormData({ ...formData, image: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-md"
+                  placeholder="https://example.com/image.jpg"
+                  disabled={isLoading}
+                />
+              </div>
+            </div>
+
+            {error && (
+              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-800 text-sm">
+                {error}
+              </div>
+            )}
+            
+            <div className="flex justify-end gap-2 mt-6">
+              <button
+                onClick={() => setIsOpen(false)}
+                disabled={isLoading}
+                className="px-4 py-2 border rounded-md hover:bg-gray-50"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={isLoading}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
+              >
+                {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+                {isEditing ? 'Sauvegarder' : 'Créer'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+function LocationFormDialog({ location, onSave, trigger, selectedLevel }: any) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    image: '',
+  });
+  const [error, setError] = useState('');
+  const isEditing = !!location;
+
+  useEffect(() => {
+    if (isOpen && location) {
+      setFormData({
+        name: location.name || '',
+        image: location.image || '',
+      });
+    } else if (isOpen && !location) {
+      setFormData({
+        name: '',
+        image: '',
+      });
+    }
+  }, [location, isOpen]);
+
+  const handleSave = async () => {
+    if (!formData.name.trim()) {
+      setError('Le nom est requis.');
+      return;
+    }
+
+    setIsLoading(true);
+    setError('');
+    
+    try {
+      const payload = {
+        ...formData,
+        levelId: selectedLevel?.id,
+      };
+
+      let response;
+      if (isEditing) {
+        response = await fetch(`/api/locations/${location.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+      } else {
+        response = await fetch('/api/locations', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+      }
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to save location');
+      }
+
+      const savedLocation = await response.json();
+      onSave(savedLocation);
+      setIsOpen(false);
+    } catch (error: any) {
+      console.error('Error saving location:', error);
+      setError(error?.message || 'Une erreur est survenue.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <>
+      <div onClick={() => setIsOpen(true)}>{trigger}</div>
+      
+      {isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
+            <h2 className="text-xl font-bold mb-4">
+              {isEditing ? 'Modifier' : 'Ajouter'} un Local
+            </h2>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Nom du local *</label>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-md"
+                  placeholder="Ex: Atelier A"
+                  disabled={isLoading}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Image URL</label>
+                <input
+                  type="text"
+                  value={formData.image}
+                  onChange={(e) => setFormData({ ...formData, image: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-md"
+                  placeholder="https://example.com/image.jpg"
+                  disabled={isLoading}
+                />
+              </div>
+            </div>
+
+            {error && (
+              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-800 text-sm">
+                {error}
+              </div>
+            )}
+            
+            <div className="flex justify-end gap-2 mt-6">
+              <button
+                onClick={() => setIsOpen(false)}
+                disabled={isLoading}
+                className="px-4 py-2 border rounded-md hover:bg-gray-50"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={isLoading}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
+              >
+                {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+                {isEditing ? 'Sauvegarder' : 'Créer'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+function EquipmentFormDialog({ equipment, onSave, trigger, selectedLocation }: any) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    code: '',
+    libelle: '',
+    typeEquipement: '',
+    marque: '',
+    statut: 'En service',
+    image: '',
+  });
+  const [error, setError] = useState('');
+  const isEditing = !!equipment;
+
+  useEffect(() => {
+    if (isOpen && equipment) {
+      setFormData({
+        code: equipment.code || '',
+        libelle: equipment.libelle || '',
+        typeEquipement: equipment.typeEquipement || '',
+        marque: equipment.marque || '',
+        statut: equipment.statut || 'En service',
+        image: equipment.image || equipment.photoUrl || '',
+      });
+    } else if (isOpen && !equipment) {
+      setFormData({
+        code: '',
+        libelle: '',
+        typeEquipement: '',
+        marque: '',
+        statut: 'En service',
+        image: '',
+      });
+    }
+  }, [equipment, isOpen]);
+
+  const handleSave = async () => {
+    if (!formData.code.trim() || !formData.libelle.trim()) {
+      setError('Le code et le libellé sont requis.');
+      return;
+    }
+
+    setIsLoading(true);
+    setError('');
+    
+    try {
+      const payload = {
+        ...formData,
+        locationId: selectedLocation?.id,
+        photoUrl: formData.image,
+      };
+
+      let response;
+      if (isEditing) {
+        response = await fetch(`/api/equipments/${equipment.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+      } else {
+        response = await fetch('/api/equipments', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+      }
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to save equipment');
+      }
+
+      const savedEquipment = await response.json();
+      onSave(savedEquipment);
+      setIsOpen(false);
+    } catch (error: any) {
+      console.error('Error saving equipment:', error);
+      setError(error?.message || 'Une erreur est survenue.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <>
+      <div onClick={() => setIsOpen(true)}>{trigger}</div>
+      
+      {isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
+            <h2 className="text-xl font-bold mb-4">
+              {isEditing ? 'Modifier' : 'Ajouter'} un Équipement
+            </h2>
+            
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Code *</label>
+                  <input
+                    type="text"
+                    value={formData.code}
+                    onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-md font-mono"
+                    placeholder="EQ-001"
+                    disabled={isLoading}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">Libellé *</label>
+                  <input
+                    type="text"
+                    value={formData.libelle}
+                    onChange={(e) => setFormData({ ...formData, libelle: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-md"
+                    placeholder="Ex: Climatiseur Central"
+                    disabled={isLoading}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Type d'équipement</label>
+                  <input
+                    type="text"
+                    value={formData.typeEquipement}
+                    onChange={(e) => setFormData({ ...formData, typeEquipement: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-md"
+                    placeholder="Ex: HVAC"
+                    disabled={isLoading}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">Marque</label>
+                  <input
+                    type="text"
+                    value={formData.marque}
+                    onChange={(e) => setFormData({ ...formData, marque: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-md"
+                    placeholder="Ex: Daikin"
+                    disabled={isLoading}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Statut</label>
+                <select
+                  value={formData.statut}
+                  onChange={(e) => setFormData({ ...formData, statut: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-md"
+                  disabled={isLoading}
+                >
+                  <option value="En service">En service</option>
+                  <option value="Alerte">Alerte</option>
+                  <option value="Hors service">Hors service</option>
+                  <option value="En veille">En veille</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Image URL</label>
+                <input
+                  type="text"
+                  value={formData.image}
+                  onChange={(e) => setFormData({ ...formData, image: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-md"
+                  placeholder="https://example.com/image.jpg"
+                  disabled={isLoading}
+                />
+              </div>
+            </div>
+
+            {error && (
+              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-800 text-sm">
+                {error}
+              </div>
+            )}
+            
+            <div className="flex justify-end gap-2 mt-6">
+              <button
+                onClick={() => setIsOpen(false)}
+                disabled={isLoading}
+                className="px-4 py-2 border rounded-md hover:bg-gray-50"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={isLoading}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
+              >
+                {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+                {isEditing ? 'Sauvegarder' : 'Créer'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+                  

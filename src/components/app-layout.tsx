@@ -73,6 +73,9 @@ import {
   Wrench,
   LogOut,
   User,
+  Building,
+  Layers,
+  DoorOpen,
 } from 'lucide-react';
 import { ClientContext, type Client } from '@/contexts/client-context';
 
@@ -86,11 +89,11 @@ const navItems = [
         label: 'Arborescence Technique', 
         icon: GitMerge,
         items: [
-          { href: '/parc/arborescence/sites', label: 'Liste des Sites', icon: Building2 },
-          { href: '/parc/arborescence/batiments', label: 'Liste des Bâtiments', icon: Building2 },
-          { href: '/parc/arborescence/niveaux', label: 'Liste des Niveaux', icon: Building2 },
-          { href: '/parc/arborescence/locaux', label: 'Liste des Locaux', icon: Building2 },
-          { href: '/parc/arborescence/equipements', label: 'Liste des Équipements', icon: Server },
+          { href: '/parc/arborescence/sites', label: 'Sites', icon: Home },
+          { href: '/parc/arborescence/batiments', label: 'Bâtiments', icon: Building },
+          { href: '/parc/arborescence/niveaux', label: 'Niveaux', icon: Layers },
+          { href: '/parc/arborescence/locaux', label: 'Locaux', icon: DoorOpen },
+          { href: '/parc/arborescence/equipements', label: 'Équipements', icon: Server },
         ]
       },
     ],
@@ -264,6 +267,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                                                         <SidebarMenuItem key={subItem.href}>
                                                             <SidebarMenuButton asChild isActive={pathname === subItem.href} size="sm" className="mx-2 justify-start text-white hover:bg-white/10 data-[active=true]:bg-white/20">
                                                                 <Link href={subItem.href} className="flex items-center gap-2 pl-14">
+                                                                    {subItem.icon && <subItem.icon className="size-4 shrink-0" />}
                                                                     <span className="group-data-[collapsible=icon]:hidden">{subItem.label}</span>
                                                                 </Link>
                                                             </SidebarMenuButton>

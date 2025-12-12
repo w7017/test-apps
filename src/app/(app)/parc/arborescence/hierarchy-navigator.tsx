@@ -185,7 +185,7 @@ const equipmentSchema = z.object({
   photoUrl: z.string().url("URL de l'image non valide").optional().or(z.literal('')),
   
   // Domaine & Dates
-  domaineDate: z.string().optional(),
+  dateVetuste: z.string().optional(),
   dateInstallation: z.string().optional(),
   dateFinGarantie: z.string().optional(),
   frequenceMaintenance: z.number().int().positive().optional(),
@@ -221,7 +221,7 @@ function EquipmentManager({ items, onUpdate, onDelete, onDuplicate, currentItem 
       domaineGMAO: '', famille: '', sousFamille: '',
       typeEquipement: '', marque: '', modele: '', reference: '', numeroSerie: '',
       photoUrl: '',
-      domaineDate: '', dateInstallation: '', dateFinGarantie: '',
+      dateVetuste: '', dateInstallation: '', dateFinGarantie: '',
     },
   });
 
@@ -287,7 +287,7 @@ function EquipmentManager({ items, onUpdate, onDelete, onDuplicate, currentItem 
         reference: equipment.reference || '',
         numeroSerie: equipment.numeroSerie || '',
         photoUrl: equipment.photoUrl || equipment.image || '',
-        domaineDate: equipment.domaineDate || '',
+        dateVetuste: equipment.dateVetuste ? new Date(equipment.dateVetuste).toISOString().split('T')[0] : '',
         dateInstallation: equipment.dateInstallation ? new Date(equipment.dateInstallation).toISOString().split('T')[0] : '',
         dateFinGarantie: equipment.dateFinGarantie ? new Date(equipment.dateFinGarantie).toISOString().split('T')[0] : '',
         frequenceMaintenance: equipment.frequenceMaintenance || undefined
@@ -378,7 +378,7 @@ function EquipmentManager({ items, onUpdate, onDelete, onDuplicate, currentItem 
         modele: values.modele,
         reference: values.reference,
         numeroSerie: values.numeroSerie,
-        domaineDate: values.domaineDate,
+        dateVetuste: values.dateVetuste ? new Date(values.dateVetuste).toISOString() : undefined,
         dateInstallation: values.dateInstallation ? new Date(values.dateInstallation).toISOString() : undefined,
         dateFinGarantie: values.dateFinGarantie ? new Date(values.dateFinGarantie).toISOString() : undefined,
         frequenceMaintenance: values.frequenceMaintenance
@@ -441,7 +441,7 @@ function EquipmentManager({ items, onUpdate, onDelete, onDuplicate, currentItem 
         domaineGMAO: '', famille: '', sousFamille: '',
         typeEquipement: '', marque: '', modele: '', reference: '', numeroSerie: '',
         photoUrl: '',
-        domaineDate: '', dateInstallation: '', dateFinGarantie: '',
+        dateVetuste: '', dateInstallation: '', dateFinGarantie: '',
       });
       setShowAddForm(false);
       
@@ -655,8 +655,11 @@ function EquipmentManager({ items, onUpdate, onDelete, onDuplicate, currentItem 
                     <div className="space-y-4 p-4 border rounded-md">
                          <h4 className="font-medium text-lg border-b pb-2">Domaine & Dates</h4>
                           <div className="grid grid-cols-2 gap-4">
-                            <FormField control={form.control} name="domaineDate" render={({ field }) => (
-                                <FormItem><FormLabel>Domaine</FormLabel><FormControl><Input placeholder="Sélectionner un domaine" {...field} /></FormControl></FormItem>
+                            <FormField control={form.control} name="dateVetuste" render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Date de vétusté</FormLabel>
+                                <FormControl><Input type="date" {...field} /></FormControl>
+                              </FormItem>
                             )}/>
                             <FormField control={form.control} name="dateInstallation" render={({ field }) => (
                                 <FormItem><FormLabel>Date d'installation</FormLabel><FormControl><Input type="date" {...field} /></FormControl></FormItem>

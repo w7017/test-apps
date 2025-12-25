@@ -152,32 +152,32 @@ function SiteFormDialog({ site, onSave, trigger, selectedClient }: any) {
       <div onClick={() => setIsOpen(true)}>{trigger}</div>
       
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
-            <h2 className="text-xl font-bold mb-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-8">
+            <h2 className="text-2xl font-bold mb-6 text-gray-800">
               {isEditing ? 'Modifier' : 'Ajouter'} un Site
             </h2>
             
-            <div className="space-y-4">
+            <div className="space-y-5">
               <div>
-                <label className="block text-sm font-medium mb-1">Nom du site *</label>
+                <label className="block text-sm font-semibold mb-2 text-gray-700">Nom du site *</label>
                 <input
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-md"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
                   placeholder="Ex: Site de Production Alpha"
                   disabled={isLoading}
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium mb-1">Adresse</label>
+                <label className="block text-sm font-semibold mb-2 text-gray-700">Adresse</label>
                 <input
                   type="text"
                   value={formData.address}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-md"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
                   placeholder="123 Rue de la Production, 75001 Paris"
                   disabled={isLoading}
                 />
@@ -185,24 +185,24 @@ function SiteFormDialog({ site, onSave, trigger, selectedClient }: any) {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1">Code Client</label>
+                  <label className="block text-sm font-semibold mb-2 text-gray-700">Code Client</label>
                   <input
                     type="text"
                     value={formData.codeClient}
                     onChange={(e) => setFormData({ ...formData, codeClient: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-md"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
                     placeholder="CLI-001"
                     disabled={isLoading}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-1">Code Affaire</label>
+                  <label className="block text-sm font-semibold mb-2 text-gray-700">Code Affaire</label>
                   <input
                     type="text"
                     value={formData.codeAffaire}
                     onChange={(e) => setFormData({ ...formData, codeAffaire: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-md"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
                     placeholder="AFF-2024-001"
                     disabled={isLoading}
                   />
@@ -210,24 +210,24 @@ function SiteFormDialog({ site, onSave, trigger, selectedClient }: any) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Code Contrat</label>
+                <label className="block text-sm font-semibold mb-2 text-gray-700">Code Contrat</label>
                 <input
                   type="text"
                   value={formData.codeContrat}
                   onChange={(e) => setFormData({ ...formData, codeContrat: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-md"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
                   placeholder="CTR-2024-001"
                   disabled={isLoading}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Image URL</label>
+                <label className="block text-sm font-semibold mb-2 text-gray-700">Image URL</label>
                 <input
                   type="text"
                   value={formData.image}
                   onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-md"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
                   placeholder="https://example.com/image.jpg"
                   disabled={isLoading}
                 />
@@ -235,23 +235,639 @@ function SiteFormDialog({ site, onSave, trigger, selectedClient }: any) {
             </div>
 
             {error && (
-              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-800 text-sm">
+              <div className="mt-5 p-4 bg-red-50 border border-red-200 rounded-xl text-red-800 text-sm">
                 {error}
               </div>
             )}
             
-            <div className="flex justify-end gap-2 mt-6">
+            <div className="flex justify-end gap-3 mt-8">
               <button
                 onClick={() => setIsOpen(false)}
                 disabled={isLoading}
-                className="px-4 py-2 border rounded-md hover:bg-gray-50"
+                className="px-6 py-3 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors font-medium"
               >
                 Annuler
               </button>
               <button
                 onClick={handleSave}
                 disabled={isLoading}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
+                className="px-6 py-3 bg-purple-600 text-white rounded-xl hover:bg-purple-700 disabled:opacity-50 flex items-center gap-2 font-medium transition-colors"
+              >
+                {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+                {isEditing ? 'Sauvegarder' : 'Créer'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+function BuildingFormDialog({ building, onSave, trigger, selectedSite }: any) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    image: '',
+  });
+  const [error, setError] = useState('');
+  const isEditing = !!building;
+
+  useEffect(() => {
+    if (isOpen && building) {
+      setFormData({
+        name: building.name || '',
+        image: building.image || '',
+      });
+    } else if (isOpen && !building) {
+      setFormData({
+        name: '',
+        image: '',
+      });
+    }
+  }, [building, isOpen]);
+
+  const handleSave = async () => {
+    if (!formData.name.trim()) {
+      setError('Le nom est requis.');
+      return;
+    }
+
+    setIsLoading(true);
+    setError('');
+    
+    try {
+      const payload = {
+        ...formData,
+        siteId: selectedSite?.id,
+      };
+
+      let response;
+      if (isEditing) {
+        response = await fetch(`/api/buildings/${building.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+      } else {
+        response = await fetch('/api/buildings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+      }
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to save building');
+      }
+
+      const savedBuilding = await response.json();
+      onSave(savedBuilding);
+      setIsOpen(false);
+    } catch (error: any) {
+      console.error('Error saving building:', error);
+      setError(error?.message || 'Une erreur est survenue.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <>
+      <div onClick={() => setIsOpen(true)}>{trigger}</div>
+      
+      {isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-8">
+            <h2 className="text-2xl font-bold mb-6 text-gray-800">
+              {isEditing ? 'Modifier' : 'Ajouter'} un Bâtiment
+            </h2>
+            
+            <div className="space-y-5">
+              <div>
+                <label className="block text-sm font-semibold mb-2 text-gray-700">Nom du bâtiment *</label>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                  placeholder="Ex: Bâtiment Principal"
+                  disabled={isLoading}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-2 text-gray-700">Image URL</label>
+                <input
+                  type="text"
+                  value={formData.image}
+                  onChange={(e) => setFormData({ ...formData, image: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                  placeholder="https://example.com/image.jpg"
+                  disabled={isLoading}
+                />
+              </div>
+            </div>
+
+            {error && (
+              <div className="mt-5 p-4 bg-red-50 border border-red-200 rounded-xl text-red-800 text-sm">
+                {error}
+              </div>
+            )}
+            
+            <div className="flex justify-end gap-3 mt-8">
+              <button
+                onClick={() => setIsOpen(false)}
+                disabled={isLoading}
+                className="px-6 py-3 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors font-medium"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={isLoading}
+                className="px-6 py-3 bg-purple-600 text-white rounded-xl hover:bg-purple-700 disabled:opacity-50 flex items-center gap-2 font-medium transition-colors"
+              >
+                {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+                {isEditing ? 'Sauvegarder' : 'Créer'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+function LevelFormDialog({ level, onSave, trigger, selectedBuilding }: any) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    image: '',
+  });
+  const [error, setError] = useState('');
+  const isEditing = !!level;
+
+  useEffect(() => {
+    if (isOpen && level) {
+      setFormData({
+        name: level.name || '',
+        image: level.image || '',
+      });
+    } else if (isOpen && !level) {
+      setFormData({
+        name: '',
+        image: '',
+      });
+    }
+  }, [level, isOpen]);
+
+  const handleSave = async () => {
+    if (!formData.name.trim()) {
+      setError('Le nom est requis.');
+      return;
+    }
+
+    setIsLoading(true);
+    setError('');
+    
+    try {
+      const payload = {
+        ...formData,
+        buildingId: selectedBuilding?.id,
+      };
+
+      let response;
+      if (isEditing) {
+        response = await fetch(`/api/levels/${level.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+      } else {
+        response = await fetch('/api/levels', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+      }
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to save level');
+      }
+
+      const savedLevel = await response.json();
+      onSave(savedLevel);
+      setIsOpen(false);
+    } catch (error: any) {
+      console.error('Error saving level:', error);
+      setError(error?.message || 'Une erreur est survenue.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <>
+      <div onClick={() => setIsOpen(true)}>{trigger}</div>
+      
+      {isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-8">
+            <h2 className="text-2xl font-bold mb-6 text-gray-800">
+              {isEditing ? 'Modifier' : 'Ajouter'} un Niveau
+            </h2>
+            
+            <div className="space-y-5">
+              <div>
+                <label className="block text-sm font-semibold mb-2 text-gray-700">Nom du niveau *</label>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                  placeholder="Ex: Rez-de-chaussée"
+                  disabled={isLoading}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-2 text-gray-700">Image URL</label>
+                <input
+                  type="text"
+                  value={formData.image}
+                  onChange={(e) => setFormData({ ...formData, image: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                  placeholder="https://example.com/image.jpg"
+                  disabled={isLoading}
+                />
+              </div>
+            </div>
+
+            {error && (
+              <div className="mt-5 p-4 bg-red-50 border border-red-200 rounded-xl text-red-800 text-sm">
+                {error}
+              </div>
+            )}
+            
+            <div className="flex justify-end gap-3 mt-8">
+              <button
+                onClick={() => setIsOpen(false)}
+                disabled={isLoading}
+                className="px-6 py-3 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors font-medium"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={isLoading}
+                className="px-6 py-3 bg-purple-600 text-white rounded-xl hover:bg-purple-700 disabled:opacity-50 flex items-center gap-2 font-medium transition-colors"
+              >
+                {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+                {isEditing ? 'Sauvegarder' : 'Créer'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+function LocationFormDialog({ location, onSave, trigger, selectedLevel }: any) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    image: '',
+  });
+  const [error, setError] = useState('');
+  const isEditing = !!location;
+
+  useEffect(() => {
+    if (isOpen && location) {
+      setFormData({
+        name: location.name || '',
+        image: location.image || '',
+      });
+    } else if (isOpen && !location) {
+      setFormData({
+        name: '',
+        image: '',
+      });
+    }
+  }, [location, isOpen]);
+
+  const handleSave = async () => {
+    if (!formData.name.trim()) {
+      setError('Le nom est requis.');
+      return;
+    }
+
+    setIsLoading(true);
+    setError('');
+    
+    try {
+      const payload = {
+        ...formData,
+        levelId: selectedLevel?.id,
+      };
+
+      let response;
+      if (isEditing) {
+        response = await fetch(`/api/locations/${location.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+      } else {
+        response = await fetch('/api/locations', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+      }
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to save location');
+      }
+
+      const savedLocation = await response.json();
+      onSave(savedLocation);
+      setIsOpen(false);
+    } catch (error: any) {
+      console.error('Error saving location:', error);
+      setError(error?.message || 'Une erreur est survenue.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <>
+      <div onClick={() => setIsOpen(true)}>{trigger}</div>
+      
+      {isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-8">
+            <h2 className="text-2xl font-bold mb-6 text-gray-800">
+              {isEditing ? 'Modifier' : 'Ajouter'} un Local
+            </h2>
+            
+            <div className="space-y-5">
+              <div>
+                <label className="block text-sm font-semibold mb-2 text-gray-700">Nom du local *</label>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                  placeholder="Ex: Atelier A"
+                  disabled={isLoading}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-2 text-gray-700">Image URL</label>
+                <input
+                  type="text"
+                  value={formData.image}
+                  onChange={(e) => setFormData({ ...formData, image: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                  placeholder="https://example.com/image.jpg"
+                  disabled={isLoading}
+                />
+              </div>
+            </div>
+
+            {error && (
+              <div className="mt-5 p-4 bg-red-50 border border-red-200 rounded-xl text-red-800 text-sm">
+                {error}
+              </div>
+            )}
+            
+            <div className="flex justify-end gap-3 mt-8">
+              <button
+                onClick={() => setIsOpen(false)}
+                disabled={isLoading}
+                className="px-6 py-3 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors font-medium"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={isLoading}
+                className="px-6 py-3 bg-purple-600 text-white rounded-xl hover:bg-purple-700 disabled:opacity-50 flex items-center gap-2 font-medium transition-colors"
+              >
+                {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+                {isEditing ? 'Sauvegarder' : 'Créer'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+function EquipmentFormDialog({ equipment, onSave, trigger, selectedLocation }: any) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    code: '',
+    libelle: '',
+    typeEquipement: '',
+    marque: '',
+    statut: 'En service',
+    image: '',
+  });
+  const [error, setError] = useState('');
+  const isEditing = !!equipment;
+
+  useEffect(() => {
+    if (isOpen && equipment) {
+      setFormData({
+        code: equipment.code || '',
+        libelle: equipment.libelle || '',
+        typeEquipement: equipment.typeEquipement || '',
+        marque: equipment.marque || '',
+        statut: equipment.statut || 'En service',
+        image: equipment.image || equipment.photoUrl || '',
+      });
+    } else if (isOpen && !equipment) {
+      setFormData({
+        code: '',
+        libelle: '',
+        typeEquipement: '',
+        marque: '',
+        statut: 'En service',
+        image: '',
+      });
+    }
+  }, [equipment, isOpen]);
+
+  const handleSave = async () => {
+    if (!formData.code.trim() || !formData.libelle.trim()) {
+      setError('Le code et le libellé sont requis.');
+      return;
+    }
+
+    setIsLoading(true);
+    setError('');
+    
+    try {
+      const payload = {
+        ...formData,
+        locationId: selectedLocation?.id,
+        photoUrl: formData.image,
+      };
+
+      let response;
+      if (isEditing) {
+        response = await fetch(`/api/equipments/${equipment.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+      } else {
+        response = await fetch('/api/equipments', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+      }
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to save equipment');
+      }
+
+      const savedEquipment = await response.json();
+      onSave(savedEquipment);
+      setIsOpen(false);
+    } catch (error: any) {
+      console.error('Error saving equipment:', error);
+      setError(error?.message || 'Une erreur est survenue.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <>
+      <div onClick={() => setIsOpen(true)}>{trigger}</div>
+      
+      {isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-8">
+            <h2 className="text-2xl font-bold mb-6 text-gray-800">
+              {isEditing ? 'Modifier' : 'Ajouter'} un Équipement
+            </h2>
+            
+            <div className="space-y-5">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold mb-2 text-gray-700">Code *</label>
+                  <input
+                    type="text"
+                    value={formData.code}
+                    onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl font-mono focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                    placeholder="EQ-001"
+                    disabled={isLoading}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold mb-2 text-gray-700">Libellé *</label>
+                  <input
+                    type="text"
+                    value={formData.libelle}
+                    onChange={(e) => setFormData({ ...formData, libelle: e.target.value })}
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                    placeholder="Ex: Climatiseur Central"
+                    disabled={isLoading}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold mb-2 text-gray-700">Type d'équipement</label>
+                  <input
+                    type="text"
+                    value={formData.typeEquipement}
+                    onChange={(e) => setFormData({ ...formData, typeEquipement: e.target.value })}
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                    placeholder="Ex: HVAC"
+                    disabled={isLoading}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold mb-2 text-gray-700">Marque</label>
+                  <input
+                    type="text"
+                    value={formData.marque}
+                    onChange={(e) => setFormData({ ...formData, marque: e.target.value })}
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                    placeholder="Ex: Daikin"
+                    disabled={isLoading}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-2 text-gray-700">Statut</label>
+                <select
+                  value={formData.statut}
+                  onChange={(e) => setFormData({ ...formData, statut: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                  disabled={isLoading}
+                >
+                  <option value="En service">En service</option>
+                  <option value="Alerte">Alerte</option>
+                  <option value="Hors service">Hors service</option>
+                  <option value="En veille">En veille</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-2 text-gray-700">Image URL</label>
+                <input
+                  type="text"
+                  value={formData.image}
+                  onChange={(e) => setFormData({ ...formData, image: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                  placeholder="https://example.com/image.jpg"
+                  disabled={isLoading}
+                />
+              </div>
+            </div>
+
+            {error && (
+              <div className="mt-5 p-4 bg-red-50 border border-red-200 rounded-xl text-red-800 text-sm">
+                {error}
+              </div>
+            )}
+            
+            <div className="flex justify-end gap-3 mt-8">
+              <button
+                onClick={() => setIsOpen(false)}
+                disabled={isLoading}
+                className="px-6 py-3 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors font-medium"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={isLoading}
+                className="px-6 py-3 bg-purple-600 text-white rounded-xl hover:bg-purple-700 disabled:opacity-50 flex items-center gap-2 font-medium transition-colors"
               >
                 {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
                 {isEditing ? 'Sauvegarder' : 'Créer'}
@@ -295,33 +911,33 @@ function DeleteConfirmDialog({ item, itemType, onDelete, trigger }: any) {
       </div>
       
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-6">
-            <h2 className="text-xl font-bold mb-4">Confirmer la suppression</h2>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8">
+            <h2 className="text-2xl font-bold mb-4 text-gray-800">Confirmer la suppression</h2>
             
-            <p className="text-sm text-gray-600 mb-4">
-              Êtes-vous sûr de vouloir supprimer "<span className="font-medium">{item?.name || item?.libelle}</span>" ?
-              <span className="block mt-2 font-medium">Cette action est irréversible.</span>
+            <p className="text-sm text-gray-600 mb-6">
+              Êtes-vous sûr de vouloir supprimer "<span className="font-semibold">{item?.name || item?.libelle}</span>" ?
+              <span className="block mt-3 font-medium text-red-600">Cette action est irréversible.</span>
             </p>
 
             {error && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-800 text-sm">
+              <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl text-red-800 text-sm">
                 {error}
               </div>
             )}
             
-            <div className="flex justify-end gap-2">
+            <div className="flex justify-end gap-3">
               <button
                 onClick={() => setIsOpen(false)}
                 disabled={isLoading}
-                className="px-4 py-2 border rounded-md hover:bg-gray-50"
+                className="px-6 py-3 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors font-medium"
               >
                 Annuler
               </button>
               <button
                 onClick={handleDelete}
                 disabled={isLoading}
-                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 flex items-center gap-2"
+                className="px-6 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 disabled:opacity-50 flex items-center gap-2 font-medium transition-colors"
               >
                 {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
                 Supprimer
@@ -360,7 +976,6 @@ export default function HierarchyListPage({
   const config = HIERARCHY_CONFIG[listType];
   const IconComponent = config?.icon || Home;
 
-  // Get selected entities for form dialogs
   const selectedSite = useMemo(() => 
     sites.find((s: any) => s.id === activeFilters.siteId), 
     [sites, activeFilters.siteId]
@@ -567,9 +1182,9 @@ export default function HierarchyListPage({
 
   if (!selectedClient) {
     return (
-      <div className="p-6">
-        <div className="bg-white rounded-lg shadow p-6 text-center">
-          <p className="text-gray-600">
+      <div className="p-8">
+        <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
+          <p className="text-gray-600 text-lg">
             Veuillez sélectionner un client pour voir la liste des {config?.title?.toLowerCase()}.
           </p>
         </div>
@@ -579,28 +1194,30 @@ export default function HierarchyListPage({
 
   const activeFilterCount = getActiveFilterCount();
   
-  // Determine if we can add new items based on required parent selection
   const canAddBuilding = listType === 'batiments' && selectedSite;
   const canAddLevel = listType === 'niveaux' && selectedBuilding;
   const canAddLocation = listType === 'locaux' && selectedLevel;
   const canAddEquipment = listType === 'equipements' && selectedLocation;
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-8 space-y-6 bg-gradient-to-br from-purple-50/30 to-blue-50/30 min-h-screen">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold flex items-center gap-2">
-            <IconComponent className="h-6 w-6" />
+          <h2 className="text-3xl font-bold flex items-center gap-3 text-gray-800">
+            <div className="p-3 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl shadow-lg">
+              <IconComponent className="h-7 w-7 text-white" />
+            </div>
             {config.title}
           </h2>
-          <p className="text-gray-600">
-            Liste des {config.title.toLowerCase()} pour {selectedClient.name}
+          <p className="text-gray-600 mt-2 text-base">
+            Liste des {config.title.toLowerCase()} pour <span className="font-semibold text-purple-600">{selectedClient.name}</span>
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-3">
           <button
             onClick={exportToCSV}
-            className="px-4 py-2 border rounded-md hover:bg-gray-50 flex items-center gap-2"
+            className="px-5 py-3 border-2 border-purple-200 rounded-xl hover:bg-purple-50 flex items-center gap-2 font-medium transition-all hover:shadow-md"
           >
             <Download className="h-4 w-4" />
             Exporter CSV
@@ -612,8 +1229,8 @@ export default function HierarchyListPage({
               onSave={handleSave}
               selectedClient={selectedClient}
               trigger={
-                <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center gap-2">
-                  <PlusCircle className="h-4 w-4" />
+                <button className="px-5 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl hover:from-orange-600 hover:to-orange-700 flex items-center gap-2 font-medium transition-all shadow-lg hover:shadow-xl">
+                  <PlusCircle className="h-5 w-5" />
                   Ajouter un {config.singular}
                 </button>
               }
@@ -627,8 +1244,8 @@ export default function HierarchyListPage({
                 onSave={handleSave}
                 selectedSite={selectedSite}
                 trigger={
-                  <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center gap-2">
-                    <PlusCircle className="h-4 w-4" />
+                  <button className="px-5 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl hover:from-orange-600 hover:to-orange-700 flex items-center gap-2 font-medium transition-all shadow-lg hover:shadow-xl">
+                    <PlusCircle className="h-5 w-5" />
                     Ajouter un {config.singular}
                   </button>
                 }
@@ -636,10 +1253,10 @@ export default function HierarchyListPage({
             ) : (
               <button 
                 disabled
-                className="px-4 py-2 bg-gray-300 text-gray-500 rounded-md cursor-not-allowed flex items-center gap-2"
+                className="px-5 py-3 bg-gray-200 text-gray-400 rounded-xl cursor-not-allowed flex items-center gap-2 font-medium"
                 title="Sélectionnez un site pour ajouter un bâtiment"
               >
-                <PlusCircle className="h-4 w-4" />
+                <PlusCircle className="h-5 w-5" />
                 Ajouter un {config.singular}
               </button>
             )
@@ -652,8 +1269,8 @@ export default function HierarchyListPage({
                 onSave={handleSave}
                 selectedBuilding={selectedBuilding}
                 trigger={
-                  <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center gap-2">
-                    <PlusCircle className="h-4 w-4" />
+                  <button className="px-5 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl hover:from-orange-600 hover:to-orange-700 flex items-center gap-2 font-medium transition-all shadow-lg hover:shadow-xl">
+                    <PlusCircle className="h-5 w-5" />
                     Ajouter un {config.singular}
                   </button>
                 }
@@ -661,10 +1278,10 @@ export default function HierarchyListPage({
             ) : (
               <button 
                 disabled
-                className="px-4 py-2 bg-gray-300 text-gray-500 rounded-md cursor-not-allowed flex items-center gap-2"
+                className="px-5 py-3 bg-gray-200 text-gray-400 rounded-xl cursor-not-allowed flex items-center gap-2 font-medium"
                 title="Sélectionnez un bâtiment pour ajouter un niveau"
               >
-                <PlusCircle className="h-4 w-4" />
+                <PlusCircle className="h-5 w-5" />
                 Ajouter un {config.singular}
               </button>
             )
@@ -677,8 +1294,8 @@ export default function HierarchyListPage({
                 onSave={handleSave}
                 selectedLevel={selectedLevel}
                 trigger={
-                  <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center gap-2">
-                    <PlusCircle className="h-4 w-4" />
+                  <button className="px-5 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl hover:from-orange-600 hover:to-orange-700 flex items-center gap-2 font-medium transition-all shadow-lg hover:shadow-xl">
+                    <PlusCircle className="h-5 w-5" />
                     Ajouter un {config.singular}
                   </button>
                 }
@@ -686,10 +1303,10 @@ export default function HierarchyListPage({
             ) : (
               <button 
                 disabled
-                className="px-4 py-2 bg-gray-300 text-gray-500 rounded-md cursor-not-allowed flex items-center gap-2"
+                className="px-5 py-3 bg-gray-200 text-gray-400 rounded-xl cursor-not-allowed flex items-center gap-2 font-medium"
                 title="Sélectionnez un niveau pour ajouter un local"
               >
-                <PlusCircle className="h-4 w-4" />
+                <PlusCircle className="h-5 w-5" />
                 Ajouter un {config.singular}
               </button>
             )
@@ -702,8 +1319,8 @@ export default function HierarchyListPage({
                 onSave={handleSave}
                 selectedLocation={selectedLocation}
                 trigger={
-                  <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center gap-2">
-                    <PlusCircle className="h-4 w-4" />
+                  <button className="px-5 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl hover:from-orange-600 hover:to-orange-700 flex items-center gap-2 font-medium transition-all shadow-lg hover:shadow-xl">
+                    <PlusCircle className="h-5 w-5" />
                     Ajouter un {config.singular}
                   </button>
                 }
@@ -711,10 +1328,10 @@ export default function HierarchyListPage({
             ) : (
               <button 
                 disabled
-                className="px-4 py-2 bg-gray-300 text-gray-500 rounded-md cursor-not-allowed flex items-center gap-2"
+                className="px-5 py-3 bg-gray-200 text-gray-400 rounded-xl cursor-not-allowed flex items-center gap-2 font-medium"
                 title="Sélectionnez un local pour ajouter un équipement"
               >
-                <PlusCircle className="h-4 w-4" />
+                <PlusCircle className="h-5 w-5" />
                 Ajouter un {config.singular}
               </button>
             )
@@ -724,13 +1341,13 @@ export default function HierarchyListPage({
 
       {/* Hierarchical Filters */}
       {config.filters.length > 0 && (
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-gray-600" />
-              <span className="font-medium">Filtres hiérarchiques</span>
+        <div className="bg-white rounded-2xl shadow-lg p-6 border border-purple-100">
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-3">
+              <Filter className="h-5 w-5 text-purple-600" />
+              <span className="font-bold text-gray-800 text-lg">Filtres hiérarchiques</span>
               {activeFilterCount > 0 && (
-                <span className="px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded-full">
+                <span className="px-3 py-1 bg-purple-100 text-purple-800 text-sm rounded-full font-semibold">
                   {activeFilterCount}
                 </span>
               )}
@@ -738,24 +1355,24 @@ export default function HierarchyListPage({
             {activeFilterCount > 0 && (
               <button
                 onClick={clearFilters}
-                className="text-sm text-gray-600 hover:text-gray-800 flex items-center gap-1"
+                className="text-sm text-purple-600 hover:text-purple-800 flex items-center gap-1 font-medium"
               >
-                <X className="h-3 w-3" />
+                <X className="h-4 w-4" />
                 Réinitialiser
               </button>
             )}
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {config.filters.includes('site') && (
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Site
                 </label>
                 <select
                   value={activeFilters.siteId}
                   onChange={(e) => handleFilterChange('siteId', e.target.value)}
-                  className="w-full px-3 py-2 text-sm border rounded-md"
+                  className="w-full px-4 py-3 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
                 >
                   <option value="">Tous les sites</option>
                   {sites.map((site: any) => (
@@ -769,13 +1386,13 @@ export default function HierarchyListPage({
 
             {config.filters.includes('building') && (
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Bâtiment
                 </label>
                 <select
                   value={activeFilters.buildingId}
                   onChange={(e) => handleFilterChange('buildingId', e.target.value)}
-                  className="w-full px-3 py-2 text-sm border rounded-md"
+                  className="w-full px-4 py-3 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
                   disabled={!activeFilters.siteId && buildings.length === 0}
                 >
                   <option value="">Tous les bâtiments</option>
@@ -790,13 +1407,13 @@ export default function HierarchyListPage({
 
             {config.filters.includes('level') && (
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Niveau
                 </label>
                 <select
                   value={activeFilters.levelId}
                   onChange={(e) => handleFilterChange('levelId', e.target.value)}
-                  className="w-full px-3 py-2 text-sm border rounded-md"
+                  className="w-full px-4 py-3 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
                   disabled={!activeFilters.buildingId && levels.length === 0}
                 >
                   <option value="">Tous les niveaux</option>
@@ -811,13 +1428,13 @@ export default function HierarchyListPage({
 
             {config.filters.includes('location') && (
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Local
                 </label>
                 <select
                   value={activeFilters.locationId}
                   onChange={(e) => handleFilterChange('locationId', e.target.value)}
-                  className="w-full px-3 py-2 text-sm border rounded-md"
+                  className="w-full px-4 py-3 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
                   disabled={!activeFilters.levelId && locations.length === 0}
                 >
                   <option value="">Tous les locaux</option>
@@ -833,15 +1450,16 @@ export default function HierarchyListPage({
         </div>
       )}
 
-      <div className="bg-white rounded-lg shadow">
-        <div className="p-4 border-b">
+      {/* Main Content */}
+      <div className="bg-white rounded-2xl shadow-lg border border-purple-100 overflow-hidden">
+        <div className="p-6 border-b border-gray-100">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-grow">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
               <input
                 type="search"
                 placeholder={`Rechercher des ${config.title.toLowerCase()}...`}
-                className="w-full pl-8 pr-3 py-2 border rounded-md"
+                className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -850,7 +1468,7 @@ export default function HierarchyListPage({
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-3 py-2 border rounded-md"
+                className="px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all font-medium"
               >
                 <option value="all">Tous les statuts</option>
                 <option value="En service">En service</option>
@@ -862,910 +1480,336 @@ export default function HierarchyListPage({
           </div>
         </div>
         
-        <div className="p-4">
+        <div className="p-6">
           {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+            <div className="flex items-center justify-center py-16">
+              <Loader2 className="h-10 w-10 animate-spin text-purple-500" />
             </div>
-          ) : filteredItems.length > 0 ? (
-            <div className="border rounded-md overflow-hidden">
-              <table className="w-full">
-              <thead className="bg-gray-50">
-                  <tr>
-                    {config.columns.map((col, idx) => (
-                      <th
-                        key={idx}
-                        className={`px-4 py-3 text-left text-sm font-medium text-gray-700 ${
-                          col === 'Actions' ? 'text-right' : ''
-                        }`}
-                      >
-                        {col}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {filteredItems.map((item) => (
-                    <tr key={item.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-3">
-                        <Image
-                          src={item.image || item.photoUrl || 'https://placehold.co/60'}
-                          alt={item.name || item.libelle}
-                          width={60}
-                          height={60}
-                          className="rounded-md object-cover"
-                        />
-                      </td>
-                      
-                      {listType === 'sites' && (
-                        <>
-                          <td className="px-4 py-3 font-medium">{item.name}</td>
-                          <td className="px-4 py-3">
-                            <div className="flex items-center gap-1 text-sm text-gray-600">
-                              <MapPin className="h-3 w-3" />
-                              {item.address || '-'}
-                            </div>
-                          </td>
-                          <td className="px-4 py-3 text-sm">{item.codeClient || '-'}</td>
-                          <td className="px-4 py-3 text-sm">{item.codeAffaire || '-'}</td>
-                          <td className="px-4 py-3 text-sm">{item.codeContrat || '-'}</td>
-                          <td className="px-4 py-3">
-                            <div className="flex flex-wrap gap-2">
-                              <Link href={`/parc/arborescence/batiments?siteId=${item.id}`}>
-                                <button className="flex items-center gap-1 px-2 py-1 text-xs bg-blue-50 text-blue-700 rounded hover:bg-blue-100 transition-colors">
-                                  <Building className="w-3 h-3" />
-                                  <span>{item.buildings?.length || 0} bâtiment{(item.buildings?.length || 0) > 1 ? 's' : ''}</span>
-                                </button>
-                              </Link>
-                              <Link href={`/parc/arborescence/niveaux?siteId=${item.id}`}>
-                                <button className="flex items-center gap-1 px-2 py-1 text-xs bg-purple-50 text-purple-700 rounded hover:bg-purple-100 transition-colors">
-                                  <Layers className="w-3 h-3" />
-                                  <span>{item.buildings?.reduce((sum: number, b: any) => sum + (b.levels?.length || 0), 0) || 0} niveau{(item.buildings?.reduce((sum: number, b: any) => sum + (b.levels?.length || 0), 0) || 0) > 1 ? 'x' : ''}</span>
-                                </button>
-                              </Link>
-                              <Link href={`/parc/arborescence/locaux?siteId=${item.id}`}>
-                                <button className="flex items-center gap-1 px-2 py-1 text-xs bg-green-50 text-green-700 rounded hover:bg-green-100 transition-colors">
-                                  <DoorOpen className="w-3 h-3" />
-                                  <span>{item.buildings?.reduce((sum: number, b: any) => sum + (b.levels?.reduce((s: number, l: any) => s + (l.locations?.length || 0), 0) || 0), 0) || 0} local{(item.buildings?.reduce((sum: number, b: any) => sum + (b.levels?.reduce((s: number, l: any) => s + (l.locations?.length || 0), 0) || 0), 0) || 0) > 1 ? 'aux' : ''}</span>
-                                </button>
-                              </Link>
-                              <Link href={`/parc/arborescence/equipements?siteId=${item.id}`}>
-                                <button className="flex items-center gap-1 px-2 py-1 text-xs bg-orange-50 text-orange-700 rounded hover:bg-orange-100 transition-colors">
-                                  <Server className="w-3 h-3" />
-                                  <span>{item.buildings?.reduce((sum: number, b: any) => sum + (b.levels?.reduce((s: number, l: any) => s + (l.locations?.reduce((ss: number, loc: any) => ss + (loc.equipments?.length || 0), 0) || 0), 0) || 0), 0) || 0} équip.</span>
-                                </button>
-                              </Link>
-                            </div>
-                          </td>
-                        </>
-                      )}
+          // Continuation from where the document cuts off...
 
-                      {listType === 'batiments' && (
-                        <>
-                          <td className="px-4 py-3 font-medium">{item.name}</td>
-                          <td className="px-4 py-3 text-sm">{item.site?.name || '-'}</td>
-                          <td className="px-4 py-3">
-                            <div className="flex flex-wrap gap-2">
-                              <Link href={`/parc/arborescence/niveaux?buildingId=${item.id}`}>
-                                <button className="flex items-center gap-1 px-2 py-1 text-xs bg-purple-50 text-purple-700 rounded hover:bg-purple-100 transition-colors">
-                                  <Layers className="w-3 h-3" />
-                                  <span>{item.levels?.length || 0} niveau{(item.levels?.length || 0) > 1 ? 'x' : ''}</span>
-                                </button>
-                              </Link>
-                              <Link href={`/parc/arborescence/locaux?buildingId=${item.id}`}>
-                                <button className="flex items-center gap-1 px-2 py-1 text-xs bg-green-50 text-green-700 rounded hover:bg-green-100 transition-colors">
-                                  <DoorOpen className="w-3 h-3" />
-                                  <span>{item.levels?.reduce((sum: number, l: any) => sum + (l.locations?.length || 0), 0) || 0} local{(item.levels?.reduce((sum: number, l: any) => sum + (l.locations?.length || 0), 0) || 0) > 1 ? 'aux' : ''}</span>
-                                </button>
-                              </Link>
-                              <Link href={`/parc/arborescence/equipements?buildingId=${item.id}`}>
-                                <button className="flex items-center gap-1 px-2 py-1 text-xs bg-orange-50 text-orange-700 rounded hover:bg-orange-100 transition-colors">
-                                  <Server className="w-3 h-3" />
-                                  <span>{item.levels?.reduce((sum: number, l: any) => sum + (l.locations?.reduce((s: number, loc: any) => s + (loc.equipments?.length || 0), 0) || 0), 0) || 0} équip.</span>
-                                </button>
-                              </Link>
-                            </div>
-                          </td>
-                        </>
-                      )}
+        ) : filteredItems.length > 0 ? (
+          <div className="border border-gray-100 rounded-2xl overflow-hidden">
+            <table className="w-full">
+              <thead className="bg-gradient-to-r from-purple-50 to-blue-50">
+                <tr>
+                  {config.columns.map((col, idx) => (
+                    <th
+                      key={idx}
+                      className={`px-6 py-4 text-left text-sm font-bold text-gray-700 ${
+                        col === 'Actions' ? 'text-right' : ''
+                      }`}
+                    >
+                      {col}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {filteredItems.map((item) => (
+                  <tr key={item.id} className="hover:bg-purple-50/30 transition-colors">
+                    <td className="px-6 py-4">
+                      <Image
+                        src={item.image || item.photoUrl || 'https://placehold.co/60'}
+                        alt={item.name || item.libelle}
+                        width={60}
+                        height={60}
+                        className="rounded-xl object-cover shadow-md"
+                      />
+                    </td>
+                    
+                    {listType === 'sites' && (
+                      <>
+                        <td className="px-6 py-4 font-semibold text-gray-800">{item.name}</td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-2 text-sm text-gray-600">
+                            <MapPin className="h-4 w-4 text-purple-500" />
+                            {item.address || '-'}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-sm font-mono text-gray-700">{item.codeClient || '-'}</td>
+                        <td className="px-6 py-4 text-sm font-mono text-gray-700">{item.codeAffaire || '-'}</td>
+                        <td className="px-6 py-4 text-sm font-mono text-gray-700">{item.codeContrat || '-'}</td>
+                        <td className="px-6 py-4">
+                          <div className="flex flex-wrap gap-2">
+                            <Link href={`/parc/arborescence/batiments?siteId=${item.id}`}>
+                              <button className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 rounded-lg hover:from-blue-100 hover:to-blue-200 transition-all shadow-sm hover:shadow font-medium">
+                                <Building className="w-3.5 h-3.5" />
+                                <span>{item.buildings?.length || 0} bâtiment{(item.buildings?.length || 0) > 1 ? 's' : ''}</span>
+                              </button>
+                            </Link>
+                            <Link href={`/parc/arborescence/niveaux?siteId=${item.id}`}>
+                              <button className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-gradient-to-r from-purple-50 to-purple-100 text-purple-700 rounded-lg hover:from-purple-100 hover:to-purple-200 transition-all shadow-sm hover:shadow font-medium">
+                                <Layers className="w-3.5 h-3.5" />
+                                <span>{item.buildings?.reduce((sum: number, b: any) => sum + (b.levels?.length || 0), 0) || 0} niveau{(item.buildings?.reduce((sum: number, b: any) => sum + (b.levels?.length || 0), 0) || 0) > 1 ? 'x' : ''}</span>
+                              </button>
+                            </Link>
+                            <Link href={`/parc/arborescence/locaux?siteId=${item.id}`}>
+                              <button className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-gradient-to-r from-green-50 to-green-100 text-green-700 rounded-lg hover:from-green-100 hover:to-green-200 transition-all shadow-sm hover:shadow font-medium">
+                                <DoorOpen className="w-3.5 h-3.5" />
+                                <span>{item.buildings?.reduce((sum: number, b: any) => sum + (b.levels?.reduce((s: number, l: any) => s + (l.locations?.length || 0), 0) || 0), 0) || 0} local{(item.buildings?.reduce((sum: number, b: any) => sum + (b.levels?.reduce((s: number, l: any) => s + (l.locations?.length || 0), 0) || 0), 0) || 0) > 1 ? 'aux' : ''}</span>
+                              </button>
+                            </Link>
+                            <Link href={`/parc/arborescence/equipements?siteId=${item.id}`}>
+                              <button className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-gradient-to-r from-orange-50 to-orange-100 text-orange-700 rounded-lg hover:from-orange-100 hover:to-orange-200 transition-all shadow-sm hover:shadow font-medium">
+                                <Server className="w-3.5 h-3.5" />
+                                <span>{item.buildings?.reduce((sum: number, b: any) => sum + (b.levels?.reduce((s: number, l: any) => s + (l.locations?.reduce((ss: number, loc: any) => ss + (loc.equipments?.length || 0), 0) || 0), 0) || 0), 0) || 0} équip.</span>
+                              </button>
+                            </Link>
+                          </div>
+                        </td>
+                      </>
+                    )}
 
-                      {listType === 'niveaux' && (
-                        <>
-                          <td className="px-4 py-3 font-medium">{item.name}</td>
-                          <td className="px-4 py-3 text-sm">{item.building?.name || '-'}</td>
-                          <td className="px-4 py-3 text-sm">{item.building?.site?.name || '-'}</td>
-                          <td className="px-4 py-3">
-                            <div className="flex flex-wrap gap-2">
-                              <Link href={`/parc/arborescence/locaux?levelId=${item.id}`}>
-                                <button className="flex items-center gap-1 px-2 py-1 text-xs bg-green-50 text-green-700 rounded hover:bg-green-100 transition-colors">
-                                  <DoorOpen className="w-3 h-3" />
-                                  <span>{item.locations?.length || 0} local{(item.locations?.length || 0) > 1 ? 'aux' : ''}</span>
-                                </button>
-                              </Link>
-                              <Link href={`/parc/arborescence/equipements?levelId=${item.id}`}>
-                                <button className="flex items-center gap-1 px-2 py-1 text-xs bg-orange-50 text-orange-700 rounded hover:bg-orange-100 transition-colors">
-                                  <Server className="w-3 h-3" />
-                                  <span>{item.locations?.reduce((sum: number, loc: any) => sum + (loc.equipments?.length || 0), 0) || 0} équip.</span>
-                                </button>
-                              </Link>
-                            </div>
-                          </td>
-                        </>
-                      )}
+                    {listType === 'batiments' && (
+                      <>
+                        <td className="px-6 py-4 font-semibold text-gray-800">{item.name}</td>
+                        <td className="px-6 py-4 text-sm text-gray-600">{item.site?.name || '-'}</td>
+                        <td className="px-6 py-4">
+                          <div className="flex flex-wrap gap-2">
+                            <Link href={`/parc/arborescence/niveaux?buildingId=${item.id}`}>
+                              <button className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-gradient-to-r from-purple-50 to-purple-100 text-purple-700 rounded-lg hover:from-purple-100 hover:to-purple-200 transition-all shadow-sm hover:shadow font-medium">
+                                <Layers className="w-3.5 h-3.5" />
+                                <span>{item.levels?.length || 0} niveau{(item.levels?.length || 0) > 1 ? 'x' : ''}</span>
+                              </button>
+                            </Link>
+                            <Link href={`/parc/arborescence/locaux?buildingId=${item.id}`}>
+                              <button className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-gradient-to-r from-green-50 to-green-100 text-green-700 rounded-lg hover:from-green-100 hover:to-green-200 transition-all shadow-sm hover:shadow font-medium">
+                                <DoorOpen className="w-3.5 h-3.5" />
+                                <span>{item.levels?.reduce((sum: number, l: any) => sum + (l.locations?.length || 0), 0) || 0} local{(item.levels?.reduce((sum: number, l: any) => sum + (l.locations?.length || 0), 0) || 0) > 1 ? 'aux' : ''}</span>
+                              </button>
+                            </Link>
+                            <Link href={`/parc/arborescence/equipements?buildingId=${item.id}`}>
+                              <button className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-gradient-to-r from-orange-50 to-orange-100 text-orange-700 rounded-lg hover:from-orange-100 hover:to-orange-200 transition-all shadow-sm hover:shadow font-medium">
+                                <Server className="w-3.5 h-3.5" />
+                                <span>{item.levels?.reduce((sum: number, l: any) => sum + (l.locations?.reduce((s: number, loc: any) => s + (loc.equipments?.length || 0), 0) || 0), 0) || 0} équip.</span>
+                              </button>
+                            </Link>
+                          </div>
+                        </td>
+                      </>
+                    )}
 
-                      {listType === 'locaux' && (
-                        <>
-                          <td className="px-4 py-3 font-medium">{item.name}</td>
-                          <td className="px-4 py-3 text-sm">{item.level?.name || '-'}</td>
-                          <td className="px-4 py-3 text-sm">{item.level?.building?.name || '-'}</td>
-                          <td className="px-4 py-3 text-sm">{item.level?.building?.site?.name || '-'}</td>
-                          <td className="px-4 py-3">
-                            <div className="flex flex-wrap gap-2">
-                              <Link href={`/parc/arborescence/equipements?locationId=${item.id}`}>
-                                <button className="flex items-center gap-1 px-2 py-1 text-xs bg-orange-50 text-orange-700 rounded hover:bg-orange-100 transition-colors">
-                                  <Server className="w-3 h-3" />
-                                  <span>{item.equipments?.length || 0} équip.</span>
-                                </button>
-                              </Link>
-                            </div>
-                          </td>
-                        </>
-                      )}
+                    {listType === 'niveaux' && (
+                      <>
+                        <td className="px-6 py-4 font-semibold text-gray-800">{item.name}</td>
+                        <td className="px-6 py-4 text-sm text-gray-600">{item.building?.name || '-'}</td>
+                        <td className="px-6 py-4 text-sm text-gray-600">{item.building?.site?.name || '-'}</td>
+                        <td className="px-6 py-4">
+                          <div className="flex flex-wrap gap-2">
+                            <Link href={`/parc/arborescence/locaux?levelId=${item.id}`}>
+                              <button className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-gradient-to-r from-green-50 to-green-100 text-green-700 rounded-lg hover:from-green-100 hover:to-green-200 transition-all shadow-sm hover:shadow font-medium">
+                                <DoorOpen className="w-3.5 h-3.5" />
+                                <span>{item.locations?.length || 0} local{(item.locations?.length || 0) > 1 ? 'aux' : ''}</span>
+                              </button>
+                            </Link>
+                            <Link href={`/parc/arborescence/equipements?levelId=${item.id}`}>
+                              <button className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-gradient-to-r from-orange-50 to-orange-100 text-orange-700 rounded-lg hover:from-orange-100 hover:to-orange-200 transition-all shadow-sm hover:shadow font-medium">
+                                <Server className="w-3.5 h-3.5" />
+                                <span>{item.locations?.reduce((sum: number, loc: any) => sum + (loc.equipments?.length || 0), 0) || 0} équip.</span>
+                              </button>
+                            </Link>
+                          </div>
+                        </td>
+                      </>
+                    )}
 
-                      {listType === 'equipements' && (
-                        <>
-                          <td className="px-4 py-3 font-mono text-sm">{item.code}</td>
-                          <td className="px-4 py-3 font-medium">{item.libelle}</td>
-                          <td className="px-4 py-3 text-sm">{item.typeEquipement || '-'}</td>
-                          <td className="px-4 py-3 text-sm">{item.marque || '-'}</td>
-                          <td className="px-4 py-3">
-                            <span
-                              className={`px-2 py-1 text-xs rounded-full ${
-                                item.statut === 'En service'
-                                  ? 'bg-green-100 text-green-800'
-                                  : item.statut === 'Alerte'
-                                  ? 'bg-yellow-100 text-yellow-800'
-                                  : 'bg-red-100 text-red-800'
-                              }`}
-                            >
-                              {item.statut}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 text-sm text-gray-600">
-                            {item.location?.name || '-'}
-                          </td>
-                        </>
-                      )}
+                    {listType === 'locaux' && (
+                      <>
+                        <td className="px-6 py-4 font-semibold text-gray-800">{item.name}</td>
+                        <td className="px-6 py-4 text-sm text-gray-600">{item.level?.name || '-'}</td>
+                        <td className="px-6 py-4 text-sm text-gray-600">{item.level?.building?.name || '-'}</td>
+                        <td className="px-6 py-4 text-sm text-gray-600">{item.level?.building?.site?.name || '-'}</td>
+                        <td className="px-6 py-4">
+                          <div className="flex flex-wrap gap-2">
+                            <Link href={`/parc/arborescence/equipements?locationId=${item.id}`}>
+                              <button className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-gradient-to-r from-orange-50 to-orange-100 text-orange-700 rounded-lg hover:from-orange-100 hover:to-orange-200 transition-all shadow-sm hover:shadow font-medium">
+                                <Server className="w-3.5 h-3.5" />
+                                <span>{item.equipments?.length || 0} équip.</span>
+                              </button>
+                            </Link>
+                          </div>
+                        </td>
+                      </>
+                    )}
 
-                      <td className="px-4 py-3 text-right">
-                        <div className="flex justify-end gap-1">
-                          <Link href={
-                            listType === 'sites' 
-                              ? `/parc/arborescence/${item.id}`
-                              : listType === 'batiments'
-                              ? `/parc/arborescence/${item.siteId}/${item.id}`
-                              : listType === 'niveaux'
-                              ? `/parc/arborescence/${item.building?.site?.id || item.building?.siteId}/${item.buildingId}/${item.id}`
-                              : listType === 'locaux'
-                              ? `/parc/arborescence/${item.level?.building?.site?.id || item.level?.building?.siteId}/${item.level?.buildingId}/${item.levelId}/${item.id}`
-                              : `/parc/arborescence/${item.id}`
-                          }>
-                            <button className="p-2 hover:bg-gray-100 rounded" title="Consulter">
-                              <Eye className="w-4 h-4" />
-                            </button>
-                          </Link>
-                          {listType === 'sites' && (
-                            <SiteFormDialog
-                              site={item}
-                              onSave={handleSave}
-                              selectedClient={selectedClient}
-                              trigger={
-                                <button className="p-2 hover:bg-gray-100 rounded" title="Modifier">
-                                  <Edit className="w-4 h-4" />
-                                </button>
-                              }
-                            />
-                          )}
-                          {listType === 'batiments' && (
-                            <BuildingFormDialog
-                              building={item}
-                              onSave={handleSave}
-                              selectedSite={item.site}
-                              trigger={
-                                <button className="p-2 hover:bg-gray-100 rounded" title="Modifier">
-                                  <Edit className="w-4 h-4" />
-                                </button>
-                              }
-                            />
-                          )}
-                          {listType === 'niveaux' && (
-                            <LevelFormDialog
-                              level={item}
-                              onSave={handleSave}
-                              selectedBuilding={item.building}
-                              trigger={
-                                <button className="p-2 hover:bg-gray-100 rounded" title="Modifier">
-                                  <Edit className="w-4 h-4" />
-                                </button>
-                              }
-                            />
-                          )}
-                          {listType === 'locaux' && (
-                            <LocationFormDialog
-                              location={item}
-                              onSave={handleSave}
-                              selectedLevel={item.level}
-                              trigger={
-                                <button className="p-2 hover:bg-gray-100 rounded" title="Modifier">
-                                  <Edit className="w-4 h-4" />
-                                </button>
-                              }
-                            />
-                          )}
-                          {listType === 'equipements' && (
-                            <EquipmentFormDialog
-                              equipment={item}
-                              onSave={handleSave}
-                              selectedLocation={item.location}
-                              trigger={
-                                <button className="p-2 hover:bg-gray-100 rounded" title="Modifier">
-                                  <Edit className="w-4 h-4" />
-                                </button>
-                              }
-                            />
-                          )}
-                          <DeleteConfirmDialog
-                            item={item}
-                            itemType={config.singular}
-                            onDelete={handleDelete}
+                    {listType === 'equipements' && (
+                      <>
+                        <td className="px-6 py-4 font-mono text-sm font-semibold text-gray-800">{item.code}</td>
+                        <td className="px-6 py-4 font-semibold text-gray-800">{item.libelle}</td>
+                        <td className="px-6 py-4 text-sm text-gray-600">{item.typeEquipement || '-'}</td>
+                        <td className="px-6 py-4 text-sm text-gray-600">{item.marque || '-'}</td>
+                        <td className="px-6 py-4">
+                          <span
+                            className={`px-3 py-1.5 text-xs rounded-lg font-semibold ${
+                              item.statut === 'En service'
+                                ? 'bg-gradient-to-r from-green-100 to-green-200 text-green-800'
+                                : item.statut === 'Alerte'
+                                ? 'bg-gradient-to-r from-yellow-100 to-yellow-200 text-yellow-800'
+                                : item.statut === 'Hors service'
+                                ? 'bg-gradient-to-r from-red-100 to-red-200 text-red-800'
+                                : 'bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800'
+                            }`}
+                          >
+                            {item.statut}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-600">
+                          {item.location?.name || '-'}
+                        </td>
+                      </>
+                    )}
+
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex justify-end gap-2">
+                        <Link href={
+                          listType === 'sites' 
+                            ? `/parc/arborescence/${item.id}`
+                            : listType === 'batiments'
+                            ? `/parc/arborescence/${item.siteId}/${item.id}`
+                            : listType === 'niveaux'
+                            ? `/parc/arborescence/${item.building?.site?.id || item.building?.siteId}/${item.buildingId}/${item.id}`
+                            : listType === 'locaux'
+                            ? `/parc/arborescence/${item.level?.building?.site?.id || item.level?.building?.siteId}/${item.level?.buildingId}/${item.levelId}/${item.id}`
+                            : `/parc/arborescence/${item.id}`
+                        }>
+                          <button className="p-2.5 hover:bg-purple-50 rounded-xl transition-colors" title="Consulter">
+                            <Eye className="w-4 h-4 text-purple-600" />
+                          </button>
+                        </Link>
+                        {listType === 'sites' && (
+                          <SiteFormDialog
+                            site={item}
+                            onSave={handleSave}
+                            selectedClient={selectedClient}
                             trigger={
-                              <button className="p-2 hover:bg-gray-100 rounded text-red-600" title="Supprimer">
-                                <Trash2 className="w-4 h-4" />
+                              <button className="p-2.5 hover:bg-blue-50 rounded-xl transition-colors" title="Modifier">
+                                <Edit className="w-4 h-4 text-blue-600" />
                               </button>
                             }
                           />
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div className="text-center py-12 border-2 border-dashed rounded-lg">
-              <IconComponent className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-              <p className="text-gray-600 mb-4">
-                Aucun {config.singular.toLowerCase()} trouvé
-              </p>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Statistics section */}
-      <div className="bg-white rounded-lg shadow p-6">
-        {/* Stats content */}
+                        )}
+                        {listType === 'batiments' && (
+                          <BuildingFormDialog
+                            building={item}
+                            onSave={handleSave}
+                            selectedSite={item.site}
+                            trigger={
+                              <button className="p-2.5 hover:bg-blue-50 rounded-xl transition-colors" title="Modifier">
+                                <Edit className="w-4 h-4 text-blue-600" />
+                              </button>
+                            }
+                          />
+                        )}
+                        {listType === 'niveaux' && (
+                          <LevelFormDialog
+                            level={item}
+                            onSave={handleSave}
+                            selectedBuilding={item.building}
+                            trigger={
+                              <button className="p-2.5 hover:bg-blue-50 rounded-xl transition-colors" title="Modifier">
+                                <Edit className="w-4 h-4 text-blue-600" />
+                              </button>
+                            }
+                          />
+                        )}
+                        {listType === 'locaux' && (
+                          <LocationFormDialog
+                            location={item}
+                            onSave={handleSave}
+                            selectedLevel={item.level}
+                            trigger={
+                              <button className="p-2.5 hover:bg-blue-50 rounded-xl transition-colors" title="Modifier">
+                                <Edit className="w-4 h-4 text-blue-600" />
+                              </button>
+                            }
+                          />
+                        )}
+                        {listType === 'equipements' && (
+                          <EquipmentFormDialog
+                            equipment={item}
+                            onSave={handleSave}
+                            selectedLocation={item.location}
+                            trigger={
+                              <button className="p-2.5 hover:bg-blue-50 rounded-xl transition-colors" title="Modifier">
+                                <Edit className="w-4 h-4 text-blue-600" />
+                              </button>
+                            }
+                          />
+                        )}
+                        <DeleteConfirmDialog
+                          item={item}
+                          itemType={config.singular}
+                          onDelete={handleDelete}
+                          trigger={
+                            <button className="p-2.5 hover:bg-red-50 rounded-xl transition-colors" title="Supprimer">
+                              <Trash2 className="w-4 h-4 text-red-600" />
+                            </button>
+                          }
+                        />
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="text-center py-16 border-2 border-dashed border-purple-200 rounded-2xl bg-purple-50/30">
+            <IconComponent className="h-16 w-16 mx-auto text-purple-300 mb-4" />
+            <p className="text-gray-600 text-lg font-medium mb-2">
+              Aucun {config.singular.toLowerCase()} trouvé
+            </p>
+            <p className="text-gray-500 text-sm">
+              Ajoutez votre premier {config.singular.toLowerCase()} pour commencer
+            </p>
+          </div>
+        )}
       </div>
     </div>
-  );
-}
-      
 
+    {/* Statistics section */}
+    <div className="bg-white rounded-2xl shadow-lg p-8 border border-purple-100">
+      <h3 className="text-xl font-bold text-gray-800 mb-6">Statistiques</h3>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="p-6 bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl border border-purple-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold text-purple-600 mb-1">Total</p>
+              <p className="text-3xl font-bold text-purple-700">{filteredItems.length}</p>
+            </div>
+            <IconComponent className="h-12 w-12 text-purple-400" />
+          </div>
+        </div>
         
-
-function BuildingFormDialog({ building, onSave, trigger, selectedSite }: any) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    name: '',
-    image: '',
-  });
-  const [error, setError] = useState('');
-  const isEditing = !!building;
-
-  useEffect(() => {
-    if (isOpen && building) {
-      setFormData({
-        name: building.name || '',
-        image: building.image || '',
-      });
-    } else if (isOpen && !building) {
-      setFormData({
-        name: '',
-        image: '',
-      });
-    }
-  }, [building, isOpen]);
-
-  const handleSave = async () => {
-    if (!formData.name.trim()) {
-      setError('Le nom est requis.');
-      return;
-    }
-
-    setIsLoading(true);
-    setError('');
-    
-    try {
-      const payload = {
-        ...formData,
-        siteId: selectedSite?.id,
-      };
-
-      let response;
-      if (isEditing) {
-        response = await fetch(`/api/buildings/${building.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
-      } else {
-        response = await fetch('/api/buildings', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
-      }
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to save building');
-      }
-
-      const savedBuilding = await response.json();
-      onSave(savedBuilding);
-      setIsOpen(false);
-    } catch (error: any) {
-      console.error('Error saving building:', error);
-      setError(error?.message || 'Une erreur est survenue.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  return (
-    <>
-      <div onClick={() => setIsOpen(true)}>{trigger}</div>
-      
-      {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
-            <h2 className="text-xl font-bold mb-4">
-              {isEditing ? 'Modifier' : 'Ajouter'} un Bâtiment
-            </h2>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">Nom du bâtiment *</label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-md"
-                  placeholder="Ex: Bâtiment Principal"
-                  disabled={isLoading}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1">Image URL</label>
-                <input
-                  type="text"
-                  value={formData.image}
-                  onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-md"
-                  placeholder="https://example.com/image.jpg"
-                  disabled={isLoading}
-                />
-              </div>
-            </div>
-
-            {error && (
-              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-800 text-sm">
-                {error}
-              </div>
-            )}
-            
-            <div className="flex justify-end gap-2 mt-6">
-              <button
-                onClick={() => setIsOpen(false)}
-                disabled={isLoading}
-                className="px-4 py-2 border rounded-md hover:bg-gray-50"
-              >
-                Annuler
-              </button>
-              <button
-                onClick={handleSave}
-                disabled={isLoading}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
-              >
-                {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-                {isEditing ? 'Sauvegarder' : 'Créer'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </>
-  );
-}
-
-function LevelFormDialog({ level, onSave, trigger, selectedBuilding }: any) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    name: '',
-    image: '',
-  });
-  const [error, setError] = useState('');
-  const isEditing = !!level;
-
-  useEffect(() => {
-    if (isOpen && level) {
-      setFormData({
-        name: level.name || '',
-        image: level.image || '',
-      });
-    } else if (isOpen && !level) {
-      setFormData({
-        name: '',
-        image: '',
-      });
-    }
-  }, [level, isOpen]);
-
-  const handleSave = async () => {
-    if (!formData.name.trim()) {
-      setError('Le nom est requis.');
-      return;
-    }
-
-    setIsLoading(true);
-    setError('');
-    
-    try {
-      const payload = {
-        ...formData,
-        buildingId: selectedBuilding?.id,
-      };
-
-      let response;
-      if (isEditing) {
-        response = await fetch(`/api/levels/${level.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
-      } else {
-        response = await fetch('/api/levels', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
-      }
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to save level');
-      }
-
-      const savedLevel = await response.json();
-      onSave(savedLevel);
-      setIsOpen(false);
-    } catch (error: any) {
-      console.error('Error saving level:', error);
-      setError(error?.message || 'Une erreur est survenue.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  return (
-    <>
-      <div onClick={() => setIsOpen(true)}>{trigger}</div>
-      
-      {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
-            <h2 className="text-xl font-bold mb-4">
-              {isEditing ? 'Modifier' : 'Ajouter'} un Niveau
-            </h2>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">Nom du niveau *</label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-md"
-                  placeholder="Ex: Rez-de-chaussée"
-                  disabled={isLoading}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1">Image URL</label>
-                <input
-                  type="text"
-                  value={formData.image}
-                  onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-md"
-                  placeholder="https://example.com/image.jpg"
-                  disabled={isLoading}
-                />
-              </div>
-            </div>
-
-            {error && (
-              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-800 text-sm">
-                {error}
-              </div>
-            )}
-            
-            <div className="flex justify-end gap-2 mt-6">
-              <button
-                onClick={() => setIsOpen(false)}
-                disabled={isLoading}
-                className="px-4 py-2 border rounded-md hover:bg-gray-50"
-              >
-                Annuler
-              </button>
-              <button
-                onClick={handleSave}
-                disabled={isLoading}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
-              >
-                {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-                {isEditing ? 'Sauvegarder' : 'Créer'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </>
-  );
-}
-
-function LocationFormDialog({ location, onSave, trigger, selectedLevel }: any) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    name: '',
-    image: '',
-  });
-  const [error, setError] = useState('');
-  const isEditing = !!location;
-
-  useEffect(() => {
-    if (isOpen && location) {
-      setFormData({
-        name: location.name || '',
-        image: location.image || '',
-      });
-    } else if (isOpen && !location) {
-      setFormData({
-        name: '',
-        image: '',
-      });
-    }
-  }, [location, isOpen]);
-
-  const handleSave = async () => {
-    if (!formData.name.trim()) {
-      setError('Le nom est requis.');
-      return;
-    }
-
-    setIsLoading(true);
-    setError('');
-    
-    try {
-      const payload = {
-        ...formData,
-        levelId: selectedLevel?.id,
-      };
-
-      let response;
-      if (isEditing) {
-        response = await fetch(`/api/locations/${location.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
-      } else {
-        response = await fetch('/api/locations', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
-      }
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to save location');
-      }
-
-      const savedLocation = await response.json();
-      onSave(savedLocation);
-      setIsOpen(false);
-    } catch (error: any) {
-      console.error('Error saving location:', error);
-      setError(error?.message || 'Une erreur est survenue.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  return (
-    <>
-      <div onClick={() => setIsOpen(true)}>{trigger}</div>
-      
-      {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
-            <h2 className="text-xl font-bold mb-4">
-              {isEditing ? 'Modifier' : 'Ajouter'} un Local
-            </h2>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">Nom du local *</label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-md"
-                  placeholder="Ex: Atelier A"
-                  disabled={isLoading}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1">Image URL</label>
-                <input
-                  type="text"
-                  value={formData.image}
-                  onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-md"
-                  placeholder="https://example.com/image.jpg"
-                  disabled={isLoading}
-                />
-              </div>
-            </div>
-
-            {error && (
-              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-800 text-sm">
-                {error}
-              </div>
-            )}
-            
-            <div className="flex justify-end gap-2 mt-6">
-              <button
-                onClick={() => setIsOpen(false)}
-                disabled={isLoading}
-                className="px-4 py-2 border rounded-md hover:bg-gray-50"
-              >
-                Annuler
-              </button>
-              <button
-                onClick={handleSave}
-                disabled={isLoading}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
-              >
-                {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-                {isEditing ? 'Sauvegarder' : 'Créer'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </>
-  );
-}
-
-function EquipmentFormDialog({ equipment, onSave, trigger, selectedLocation }: any) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    code: '',
-    libelle: '',
-    typeEquipement: '',
-    marque: '',
-    statut: 'En service',
-    image: '',
-  });
-  const [error, setError] = useState('');
-  const isEditing = !!equipment;
-
-  useEffect(() => {
-    if (isOpen && equipment) {
-      setFormData({
-        code: equipment.code || '',
-        libelle: equipment.libelle || '',
-        typeEquipement: equipment.typeEquipement || '',
-        marque: equipment.marque || '',
-        statut: equipment.statut || 'En service',
-        image: equipment.image || equipment.photoUrl || '',
-      });
-    } else if (isOpen && !equipment) {
-      setFormData({
-        code: '',
-        libelle: '',
-        typeEquipement: '',
-        marque: '',
-        statut: 'En service',
-        image: '',
-      });
-    }
-  }, [equipment, isOpen]);
-
-  const handleSave = async () => {
-    if (!formData.code.trim() || !formData.libelle.trim()) {
-      setError('Le code et le libellé sont requis.');
-      return;
-    }
-
-    setIsLoading(true);
-    setError('');
-    
-    try {
-      const payload = {
-        ...formData,
-        locationId: selectedLocation?.id,
-        photoUrl: formData.image,
-      };
-
-      let response;
-      if (isEditing) {
-        response = await fetch(`/api/equipments/${equipment.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
-      } else {
-        response = await fetch('/api/equipments', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
-      }
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to save equipment');
-      }
-
-      const savedEquipment = await response.json();
-      onSave(savedEquipment);
-      setIsOpen(false);
-    } catch (error: any) {
-      console.error('Error saving equipment:', error);
-      setError(error?.message || 'Une erreur est survenue.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  return (
-    <>
-      <div onClick={() => setIsOpen(true)}>{trigger}</div>
-      
-      {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
-            <h2 className="text-xl font-bold mb-4">
-              {isEditing ? 'Modifier' : 'Ajouter'} un Équipement
-            </h2>
-            
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+        {listType === 'equipements' && (
+          <>
+            <div className="p-6 bg-gradient-to-br from-green-50 to-green-100 rounded-xl border border-green-200">
+              <div className="flex items-center justify-between">
                 <div>
-                  <label className="block text-sm font-medium mb-1">Code *</label>
-                  <input
-                    type="text"
-                    value={formData.code}
-                    onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-md font-mono"
-                    placeholder="EQ-001"
-                    disabled={isLoading}
-                  />
+                  <p className="text-sm font-semibold text-green-600 mb-1">En service</p>
+                  <p className="text-3xl font-bold text-green-700">
+                    {filteredItems.filter((item: any) => item.statut === 'En service').length}
+                  </p>
                 </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-1">Libellé *</label>
-                  <input
-                    type="text"
-                    value={formData.libelle}
-                    onChange={(e) => setFormData({ ...formData, libelle: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-md"
-                    placeholder="Ex: Climatiseur Central"
-                    disabled={isLoading}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">Type d'équipement</label>
-                  <input
-                    type="text"
-                    value={formData.typeEquipement}
-                    onChange={(e) => setFormData({ ...formData, typeEquipement: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-md"
-                    placeholder="Ex: HVAC"
-                    disabled={isLoading}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-1">Marque</label>
-                  <input
-                    type="text"
-                    value={formData.marque}
-                    onChange={(e) => setFormData({ ...formData, marque: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-md"
-                    placeholder="Ex: Daikin"
-                    disabled={isLoading}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1">Statut</label>
-                <select
-                  value={formData.statut}
-                  onChange={(e) => setFormData({ ...formData, statut: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-md"
-                  disabled={isLoading}
-                >
-                  <option value="En service">En service</option>
-                  <option value="Alerte">Alerte</option>
-                  <option value="Hors service">Hors service</option>
-                  <option value="En veille">En veille</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1">Image URL</label>
-                <input
-                  type="text"
-                  value={formData.image}
-                  onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-md"
-                  placeholder="https://example.com/image.jpg"
-                  disabled={isLoading}
-                />
+                <Server className="h-12 w-12 text-green-400" />
               </div>
             </div>
-
-            {error && (
-              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-800 text-sm">
-                {error}
-              </div>
-            )}
             
-            <div className="flex justify-end gap-2 mt-6">
-              <button
-                onClick={() => setIsOpen(false)}
-                disabled={isLoading}
-                className="px-4 py-2 border rounded-md hover:bg-gray-50"
-              >
-                Annuler
-              </button>
-              <button
-                onClick={handleSave}
-                disabled={isLoading}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
-              >
-                {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-                {isEditing ? 'Sauvegarder' : 'Créer'}
-              </button>
+            <div className="p-6 bg-gradient-to-br from-red-50 to-red-100 rounded-xl border border-red-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-red-600 mb-1">Hors service</p>
+                  <p className="text-3xl font-bold text-red-700">
+                    {filteredItems.filter((item: any) => item.statut === 'Hors service').length}
+                  </p>
+                </div>
+                <Server className="h-12 w-12 text-red-400" />
+              </div>
             </div>
-          </div>
-        </div>
-      )}
-    </>
-  );
+          </>
+        )}
+      </div>
+    </div>
+  </div>
+);
 }
-                  

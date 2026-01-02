@@ -1591,6 +1591,49 @@ export default function HierarchyListPage({
         )}
       </div>
 
+      <div className="bg-white rounded-2xl shadow-lg p-8 border border-purple-100">
+        <h3 className="text-xl font-bold text-gray-800 mb-6">Statistiques</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="p-6 bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl border border-purple-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-semibold text-purple-600 mb-1">Total</p>
+                <p className="text-3xl font-bold text-purple-700">{filteredItems.length}</p>
+              </div>
+              <IconComponent className="h-12 w-12 text-purple-400" />
+            </div>
+          </div>
+          
+          {listType === 'equipements' && (
+            <>
+              <div className="p-6 bg-gradient-to-br from-green-50 to-green-100 rounded-xl border border-green-200">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-green-600 mb-1">En service</p>
+                    <p className="text-3xl font-bold text-green-700">
+                      {filteredItems.filter((item: any) => item.statut === 'En service').length}
+                    </p>
+                  </div>
+                  <Server className="h-12 w-12 text-green-400" />
+                </div>
+              </div>
+              
+              <div className="p-6 bg-gradient-to-br from-red-50 to-red-100 rounded-xl border border-red-200">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-red-600 mb-1">Hors service</p>
+                    <p className="text-3xl font-bold text-red-700">
+                      {filteredItems.filter((item: any) => item.statut === 'Hors service').length}
+                    </p>
+                  </div>
+                  <Server className="h-12 w-12 text-red-400" />
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+
       {/* Hierarchical Filters */}
       {config.filters.length > 0 && (
         <div className="bg-white rounded-2xl shadow-lg p-6 border border-purple-100">
@@ -1935,50 +1978,6 @@ export default function HierarchyListPage({
                 Ajoutez votre premier {config.singular.toLowerCase()} pour commencer
               </p>
             </div>
-          )}
-        </div>
-      </div>
-
-      {/* Statistics section */}
-      <div className="bg-white rounded-2xl shadow-lg p-8 border border-purple-100">
-        <h3 className="text-xl font-bold text-gray-800 mb-6">Statistiques</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="p-6 bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl border border-purple-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-semibold text-purple-600 mb-1">Total</p>
-                <p className="text-3xl font-bold text-purple-700">{filteredItems.length}</p>
-              </div>
-              <IconComponent className="h-12 w-12 text-purple-400" />
-            </div>
-          </div>
-          
-          {listType === 'equipements' && (
-            <>
-              <div className="p-6 bg-gradient-to-br from-green-50 to-green-100 rounded-xl border border-green-200">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-semibold text-green-600 mb-1">En service</p>
-                    <p className="text-3xl font-bold text-green-700">
-                      {filteredItems.filter((item: any) => item.statut === 'En service').length}
-                    </p>
-                  </div>
-                  <Server className="h-12 w-12 text-green-400" />
-                </div>
-              </div>
-              
-              <div className="p-6 bg-gradient-to-br from-red-50 to-red-100 rounded-xl border border-red-200">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-semibold text-red-600 mb-1">Hors service</p>
-                    <p className="text-3xl font-bold text-red-700">
-                      {filteredItems.filter((item: any) => item.statut === 'Hors service').length}
-                    </p>
-                  </div>
-                  <Server className="h-12 w-12 text-red-400" />
-                </div>
-              </div>
-            </>
           )}
         </div>
       </div>

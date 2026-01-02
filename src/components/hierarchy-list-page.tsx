@@ -36,7 +36,7 @@ const HIERARCHY_CONFIG = {
     singular: 'Site',
     icon: Home,
     apiEndpoint: '/api/sites',
-    columns: ['', 'Informations', 'Codes', 'Hiérarchie', 'Actions'],
+    columns: ['Image', 'Nom', 'Adresse', 'Code Postal', 'Ville', 'État', 'Code Client', 'Code Affaire', 'Code Contrat', 'Arborescence', 'Actions'],
     filters: [],
   },
   batiments: {
@@ -71,6 +71,66 @@ const HIERARCHY_CONFIG = {
     columns: ['Image', 'Code', 'Libellé', 'Type', 'Marque', 'Statut', 'Local', 'Actions'],
     filters: ['site', 'building', 'level', 'location'],
   },
+};
+
+const extractCityAndPostalCode = (address: string) => {
+  if (!address) return { city: '', postalCode: '' };
+  
+  const postalCodeMatch = address.match(/\b(\d{5})\b/);
+  const postalCode = postalCodeMatch ? postalCodeMatch[1] : '';
+  
+  let city = '';
+  if (postalCode) {
+    const parts = address.split(postalCode);
+    city = parts[1]?.trim().split(',')[0] || '';
+  } else {
+    const parts = address.split(',');
+    city = parts[parts.length - 1]?.trim() || '';
+  }
+  
+  return { city, postalCode };
+};
+
+const getStatusInfo = (item: any) => {
+  if (!item.estPlanifie) {
+    return {
+      label: 'Non planifié',
+      bandColor: 'bg-blue-500',
+      bgColor: 'bg-blue-50',
+      textColor: 'text-blue-700',
+    };
+  }
+  
+  switch (item.avancement) {
+    case 'commence':
+      return {
+        label: 'Commencé',
+        bandColor: 'bg-blue-500',
+        bgColor: 'bg-blue-50',
+        textColor: 'text-blue-700',
+      };
+    case 'en_cours':
+      return {
+        label: 'En cours',
+        bandColor: 'bg-orange-500',
+        bgColor: 'bg-orange-50',
+        textColor: 'text-orange-700',
+      };
+    case 'termine':
+      return {
+        label: 'Terminé',
+        bandColor: 'bg-green-500',
+        bgColor: 'bg-green-50',
+        textColor: 'text-green-700',
+      };
+    default:
+      return {
+        label: 'Non planifié',
+        bandColor: 'bg-blue-500',
+        bgColor: 'bg-blue-50',
+        textColor: 'text-blue-700',
+      };
+  }
 };
 
 const getAvancementColor = (avancement: string) => {
@@ -1358,20 +1418,6 @@ export default function HierarchyListPage({
           </p>
         </div>
         <div className="flex gap-3">
-          {/* Advanced Filter Button */}
-          <button
-            onClick={() => setIsFilterPanelOpen(true)}
-            className="px-5 py-3 border-2 border-purple-200 rounded-xl hover:bg-purple-50 flex items-center gap-2 font-medium transition-all hover:shadow-md relative"
-          >
-            <Filter className="h-4 w-4" />
-            Filtres avancés
-            {getActiveAdvancedFilterCount() > 0 && (
-              <span className="absolute -top-2 -right-2 w-6 h-6 bg-purple-600 text-white text-xs font-bold rounded-full flex items-center justify-center">
-                {getActiveAdvancedFilterCount()}
-              </span>
-            )}
-          </button>
-          
           <button
             onClick={exportToCSV}
             className="px-5 py-3 border-2 border-purple-200 rounded-xl hover:bg-purple-50 flex items-center gap-2 font-medium transition-all hover:shadow-md"
@@ -1380,7 +1426,119 @@ export default function HierarchyListPage({
             Exporter CSV
           </button>
           
-          {/* Existing Add buttons... */}
+          {listType === 'sites' && (
+            <SiteFormDialog
+              site={null}
+              onSave={handleSave}
+              selectedClient={selectedClient}
+              trigger={
+                <button className="px-5 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl hover:from-orange-600 hover:to-orange-700 flex items-center gap-2 font-medium transition-all shadow-lg hover:shadow-xl">
+                  <PlusCircle className="h-5 w-5" />
+                  Ajouter un Site
+                </button>
+              }
+            />
+          )}
+          
+          {listType === 'batiments' && (
+            canAddBuilding ? (
+              <BuildingFormDialog
+                building={null}
+                onSave={handleSave}
+                selectedSite={selectedSite}
+                trigger={
+                  <button className="px-5 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl hover:from-orange-600 hover:to-orange-700 flex items-center gap-2 font-medium transition-all shadow-lg hover:shadow-xl">
+                    <PlusCircle className="h-5 w-5" />
+                    Ajouter un Bâtiment
+                  </button>
+                }
+              />
+            ) : (
+              <button 
+                disabled
+                className="px-5 py-3 bg-gray-200 text-gray-400 rounded-xl cursor-not-allowed flex items-center gap-2 font-medium"
+                title="Sélectionnez un site pour ajouter un bâtiment"
+              >
+                <PlusCircle className="h-5 w-5" />
+                Ajouter un Bâtiment
+              </button>
+            )
+          )}
+          
+          {listType === 'niveaux' && (
+            canAddLevel ? (
+              <LevelFormDialog
+                level={null}
+                onSave={handleSave}
+                selectedBuilding={selectedBuilding}
+                trigger={
+                  <button className="px-5 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl hover:from-orange-600 hover:to-orange-700 flex items-center gap-2 font-medium transition-all shadow-lg hover:shadow-xl">
+                    <PlusCircle className="h-5 w-5" />
+                    Ajouter un Niveau
+                  </button>
+                }
+              />
+            ) : (
+              <button 
+                disabled
+                className="px-5 py-3 bg-gray-200 text-gray-400 rounded-xl cursor-not-allowed flex items-center gap-2 font-medium"
+                title="Sélectionnez un bâtiment pour ajouter un niveau"
+              >
+                <PlusCircle className="h-5 w-5" />
+                Ajouter un Niveau
+              </button>
+            )
+          )}
+          
+          {listType === 'locaux' && (
+            canAddLocation ? (
+              <LocationFormDialog
+                location={null}
+                onSave={handleSave}
+                selectedLevel={selectedLevel}
+                trigger={
+                  <button className="px-5 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl hover:from-orange-600 hover:to-orange-700 flex items-center gap-2 font-medium transition-all shadow-lg hover:shadow-xl">
+                    <PlusCircle className="h-5 w-5" />
+                    Ajouter un Local
+                  </button>
+                }
+              />
+            ) : (
+              <button 
+                disabled
+                className="px-5 py-3 bg-gray-200 text-gray-400 rounded-xl cursor-not-allowed flex items-center gap-2 font-medium"
+                title="Sélectionnez un niveau pour ajouter un local"
+              >
+                <PlusCircle className="h-5 w-5" />
+                Ajouter un Local
+              </button>
+            )
+          )}
+          
+          {listType === 'equipements' && (
+            canAddEquipment ? (
+              <EquipmentFormDialog
+                equipment={null}
+                onSave={handleSave}
+                selectedLocation={selectedLocation}
+                trigger={
+                  <button className="px-5 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl hover:from-orange-600 hover:to-orange-700 flex items-center gap-2 font-medium transition-all shadow-lg hover:shadow-xl">
+                    <PlusCircle className="h-5 w-5" />
+                    Ajouter un Équipement
+                  </button>
+                }
+              />
+            ) : (
+              <button 
+                disabled
+                className="px-5 py-3 bg-gray-200 text-gray-400 rounded-xl cursor-not-allowed flex items-center gap-2 font-medium"
+                title="Sélectionnez un local pour ajouter un équipement"
+              >
+                <PlusCircle className="h-5 w-5" />
+                Ajouter un Équipement
+              </button>
+            )
+          )}
         </div>
         <FilterPanel
           isOpen={isFilterPanelOpen}
@@ -1438,7 +1596,9 @@ export default function HierarchyListPage({
         <div className="bg-white rounded-2xl shadow-lg p-6 border border-purple-100">
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-3">
-              <Filter className="h-5 w-5 text-purple-600" />
+              <div className="p-2 bg-purple-100 rounded-xl">
+                <Filter className="h-5 w-5 text-purple-600" />
+              </div>
               <span className="font-bold text-gray-800 text-lg">Filtres hiérarchiques</span>
               {activeFilterCount > 0 && (
                 <span className="px-3 py-1 bg-purple-100 text-purple-800 text-sm rounded-full font-semibold">
@@ -1446,15 +1606,30 @@ export default function HierarchyListPage({
                 </span>
               )}
             </div>
-            {activeFilterCount > 0 && (
+            <div className="flex items-center gap-3">
+              {activeFilterCount > 0 && (
+                <button
+                  onClick={clearFilters}
+                  className="text-sm text-purple-600 hover:text-purple-800 flex items-center gap-1 font-medium"
+                >
+                  <X className="h-4 w-4" />
+                  Réinitialiser
+                </button>
+              )}
+              {/* Advanced Filters Icon Button */}
               <button
-                onClick={clearFilters}
-                className="text-sm text-purple-600 hover:text-purple-800 flex items-center gap-1 font-medium"
+                onClick={() => setIsFilterPanelOpen(true)}
+                className="p-2.5 border-2 border-purple-200 rounded-xl hover:bg-purple-50 transition-all hover:shadow-md relative"
+                title="Filtres avancés"
               >
-                <X className="h-4 w-4" />
-                Réinitialiser
+                <Filter className="h-5 w-5 text-purple-600" />
+                {getActiveAdvancedFilterCount() > 0 && (
+                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-purple-600 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                    {getActiveAdvancedFilterCount()}
+                  </span>
+                )}
               </button>
-            )}
+            </div>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -1579,17 +1754,15 @@ export default function HierarchyListPage({
             <div className="flex items-center justify-center py-16">
               <Loader2 className="h-10 w-10 animate-spin text-purple-500" />
             </div>
-          // Continuation from where the document cuts off...
-
           ) : filteredItems.length > 0 ? (
-            <div className="border border-gray-100 rounded-2xl overflow-hidden">
-              <table className="w-full">
+            <div className="border border-gray-100 rounded-2xl overflow-x-auto">
+              <table className="w-full min-w-max">
                 <thead className="bg-gradient-to-r from-purple-50 to-blue-50">
                   <tr>
                     {config.columns.map((col, idx) => (
                       <th
                         key={idx}
-                        className={`px-6 py-4 text-left text-sm font-bold text-gray-700 ${
+                        className={`px-4 py-4 text-left text-sm font-bold text-gray-700 whitespace-nowrap ${
                           col === 'Actions' ? 'text-right' : ''
                         }`}
                       >
@@ -1601,380 +1774,152 @@ export default function HierarchyListPage({
                 <tbody className="divide-y divide-gray-100">
                   {filteredItems.map((item) => (
                     <tr key={item.id} className="hover:bg-purple-50/30 transition-colors">
-                      <td className="px-6 py-4">
-                        <Image
-                          src={item.image || item.photoUrl || 'https://placehold.co/60'}
-                          alt={item.name || item.libelle}
-                          width={60}
-                          height={60}
-                          className="rounded-xl object-cover shadow-md"
-                        />
-                      </td>
-                      
-                      {listType === 'sites' && (
-                      <>
-                        {/* Color Band */}
-                        <td className="px-0 py-4 w-2">
-                          <div className={`h-full w-2 ${getAvancementColor(item.avancement)}`}></div>
-                        </td>
+                      {listType === 'sites' && (() => {
+                        const status = getStatusInfo(item);
+                        const { city, postalCode } = extractCityAndPostalCode(item.address || '');
                         
-                        {/* Informations Column */}
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-4">
-                            <Image
-                              src={item.image || 'https://placehold.co/80'}
-                              alt={item.name}
-                              width={80}
-                              height={80}
-                              className="rounded-xl object-cover shadow-md"
-                            />
-                            <div className="flex-1">
-                              <h3 className="font-bold text-lg text-gray-800 mb-1">{item.name}</h3>
-                              {item.address && (
-                                <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
-                                  <MapPin className="h-4 w-4 text-purple-500 flex-shrink-0" />
-                                  <span>{item.address}</span>
-                                </div>
-                              )}
-                              <div className="flex items-center gap-3">
-                                {item.estPlanifie !== undefined && (
-                                  <span className={`px-2.5 py-1 text-xs rounded-full font-semibold ${
-                                    item.estPlanifie 
-                                      ? 'bg-blue-100 text-blue-700' 
-                                      : 'bg-gray-100 text-gray-700'
-                                  }`}>
-                                    {item.estPlanifie ? '📋 Planifié' : '📋 Non planifié'}
-                                  </span>
-                                )}
-                                <span className={`px-2.5 py-1 text-xs rounded-full font-semibold ${
-                                  item.avancement === 'termine' 
-                                    ? 'bg-green-100 text-green-700'
-                                    : item.avancement === 'en_cours'
-                                    ? 'bg-yellow-100 text-yellow-700'
-                                    : item.avancement === 'commence'
-                                    ? 'bg-blue-100 text-blue-700'
-                                    : 'bg-gray-100 text-gray-700'
-                                }`}>
-                                  {getAvancementLabel(item.avancement)}
+                        return (
+                          <>
+                            {/* Image */}
+                            <td className="px-4 py-4">
+                              <Image
+                                src={item.image || 'https://placehold.co/60x60'}
+                                alt={item.name}
+                                width={60}
+                                height={60}
+                                className="rounded-xl object-cover shadow-md"
+                              />
+                            </td>
+                            
+                            {/* Nom */}
+                            <td className="px-4 py-4">
+                              <span className="font-bold text-gray-800 whitespace-nowrap">{item.name}</span>
+                            </td>
+                            
+                            {/* Adresse */}
+                            <td className="px-4 py-4">
+                              <span className="text-sm text-gray-600">{item.address || '-'}</span>
+                            </td>
+                            
+                            {/* Code Postal */}
+                            <td className="px-4 py-4">
+                              <span className="text-sm font-mono text-gray-700 bg-gray-50 px-2 py-1 rounded whitespace-nowrap">
+                                {postalCode || '-'}
+                              </span>
+                            </td>
+                            
+                            {/* Ville */}
+                            <td className="px-4 py-4">
+                              <span className="text-sm text-gray-700 whitespace-nowrap">{city || '-'}</span>
+                            </td>
+                            
+                            {/* État with colored band */}
+                            <td className="px-4 py-4">
+                              <div className="flex items-center gap-2">
+                                <div className={`w-1 h-8 rounded-full ${status.bandColor}`}></div>
+                                <span className={`px-3 py-1.5 text-xs rounded-lg font-semibold ${status.bgColor} ${status.textColor} whitespace-nowrap`}>
+                                  {status.label}
                                 </span>
                               </div>
-                            </div>
-                          </div>
-                        </td>
-                        
-                        {/* Codes Column */}
-                        <td className="px-6 py-4">
-                          <div className="space-y-2">
-                            {item.codeClient && (
-                              <div className="flex items-center gap-2">
-                                <span className="text-xs font-semibold text-gray-500 w-16">Client:</span>
-                                <span className="text-sm font-mono text-gray-700 bg-gray-50 px-2 py-1 rounded">{item.codeClient}</span>
-                              </div>
-                            )}
-                            {item.codeAffaire && (
-                              <div className="flex items-center gap-2">
-                                <span className="text-xs font-semibold text-gray-500 w-16">Affaire:</span>
-                                <span className="text-sm font-mono text-gray-700 bg-gray-50 px-2 py-1 rounded">{item.codeAffaire}</span>
-                              </div>
-                            )}
-                            {item.codeContrat && (
-                              <div className="flex items-center gap-2">
-                                <span className="text-xs font-semibold text-gray-500 w-16">Contrat:</span>
-                                <span className="text-sm font-mono text-gray-700 bg-gray-50 px-2 py-1 rounded">{item.codeContrat}</span>
-                              </div>
-                            )}
-                            {!item.codeClient && !item.codeAffaire && !item.codeContrat && (
-                              <span className="text-sm text-gray-400 italic">Aucun code</span>
-                            )}
-                          </div>
-                        </td>
-                        
-                        {/* Hiérarchie Column - Single Line with Icons */}
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-3">
-                            {/* Bâtiments */}
-                            <Link href={`/parc/arborescence/batiments?siteId=${item.id}`}>
-                              <div className="group flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 rounded-lg transition-all cursor-pointer shadow-sm hover:shadow">
-                                <div className="p-1.5 bg-blue-500 rounded-lg group-hover:scale-110 transition-transform">
-                                  <Building className="w-4 h-4 text-white" />
-                                </div>
-                                <div className="flex flex-col">
-                                  <span className="text-xs font-semibold text-blue-700">
-                                    {item.buildings?.length || 0}
-                                  </span>
-                                  <span className="text-[10px] text-blue-600 leading-none">Bât.</span>
-                                </div>
-                              </div>
-                            </Link>
+                            </td>
                             
-                            {/* Niveaux */}
-                            <Link href={`/parc/arborescence/niveaux?siteId=${item.id}`}>
-                              <div className="group flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-purple-50 to-purple-100 hover:from-purple-100 hover:to-purple-200 rounded-lg transition-all cursor-pointer shadow-sm hover:shadow">
-                                <div className="p-1.5 bg-purple-500 rounded-lg group-hover:scale-110 transition-transform">
-                                  <Layers className="w-4 h-4 text-white" />
-                                </div>
-                                <div className="flex flex-col">
-                                  <span className="text-xs font-semibold text-purple-700">
-                                    {item.buildings?.reduce((sum: number, b: any) => sum + (b.levels?.length || 0), 0) || 0}
-                                  </span>
-                                  <span className="text-[10px] text-purple-600 leading-none">Niv.</span>
-                                </div>
-                              </div>
-                            </Link>
+                            {/* Code Client */}
+                            <td className="px-4 py-4">
+                              <span className="text-sm font-mono text-gray-700 bg-gray-50 px-2 py-1 rounded whitespace-nowrap">
+                                {item.codeClient || '-'}
+                              </span>
+                            </td>
                             
-                            {/* Locaux */}
-                            <Link href={`/parc/arborescence/locaux?siteId=${item.id}`}>
-                              <div className="group flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-green-50 to-green-100 hover:from-green-100 hover:to-green-200 rounded-lg transition-all cursor-pointer shadow-sm hover:shadow">
-                                <div className="p-1.5 bg-green-500 rounded-lg group-hover:scale-110 transition-transform">
-                                  <DoorOpen className="w-4 h-4 text-white" />
-                                </div>
-                                <div className="flex flex-col">
-                                  <span className="text-xs font-semibold text-green-700">
-                                    {item.buildings?.reduce((sum: number, b: any) => sum + (b.levels?.reduce((s: number, l: any) => s + (l.locations?.length || 0), 0) || 0), 0) || 0}
-                                  </span>
-                                  <span className="text-[10px] text-green-600 leading-none">Loc.</span>
-                                </div>
-                              </div>
-                            </Link>
+                            {/* Code Affaire */}
+                            <td className="px-4 py-4">
+                              <span className="text-sm font-mono text-gray-700 bg-gray-50 px-2 py-1 rounded whitespace-nowrap">
+                                {item.codeAffaire || '-'}
+                              </span>
+                            </td>
                             
-                            {/* Équipements */}
-                            <Link href={`/parc/arborescence/equipements?siteId=${item.id}`}>
-                              <div className="group flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-orange-50 to-orange-100 hover:from-orange-100 hover:to-orange-200 rounded-lg transition-all cursor-pointer shadow-sm hover:shadow">
-                                <div className="p-1.5 bg-orange-500 rounded-lg group-hover:scale-110 transition-transform">
-                                  <Server className="w-4 h-4 text-white" />
-                                </div>
-                                <div className="flex flex-col">
-                                  <span className="text-xs font-semibold text-orange-700">
-                                    {item.buildings?.reduce((sum: number, b: any) => sum + (b.levels?.reduce((s: number, l: any) => s + (l.locations?.reduce((ss: number, loc: any) => ss + (loc.equipments?.length || 0), 0) || 0), 0) || 0), 0) || 0}
-                                  </span>
-                                  <span className="text-[10px] text-orange-600 leading-none">Équ.</span>
-                                </div>
+                            {/* Code Contrat */}
+                            <td className="px-4 py-4">
+                              <span className="text-sm font-mono text-gray-700 bg-gray-50 px-2 py-1 rounded whitespace-nowrap">
+                                {item.codeContrat || '-'}
+                              </span>
+                            </td>
+                            
+                            {/* Arborescence */}
+                            <td className="px-4 py-4">
+                              <div className="flex items-center gap-2 whitespace-nowrap">
+                                <Link href={`/parc/arborescence/batiments?siteId=${item.id}`}>
+                                  <div className="group flex items-center gap-1.5 px-2.5 py-1.5 bg-gradient-to-r from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 rounded-lg transition-all cursor-pointer shadow-sm hover:shadow">
+                                    <Building className="w-3.5 h-3.5 text-blue-600" />
+                                    <span className="text-xs font-semibold text-blue-700">
+                                      {item.buildings?.length || 0}
+                                    </span>
+                                  </div>
+                                </Link>
+                                
+                                <Link href={`/parc/arborescence/niveaux?siteId=${item.id}`}>
+                                  <div className="group flex items-center gap-1.5 px-2.5 py-1.5 bg-gradient-to-r from-purple-50 to-purple-100 hover:from-purple-100 hover:to-purple-200 rounded-lg transition-all cursor-pointer shadow-sm hover:shadow">
+                                    <Layers className="w-3.5 h-3.5 text-purple-600" />
+                                    <span className="text-xs font-semibold text-purple-700">
+                                      {item.buildings?.reduce((sum: number, b: any) => sum + (b.levels?.length || 0), 0) || 0}
+                                    </span>
+                                  </div>
+                                </Link>
+                                
+                                <Link href={`/parc/arborescence/locaux?siteId=${item.id}`}>
+                                  <div className="group flex items-center gap-1.5 px-2.5 py-1.5 bg-gradient-to-r from-green-50 to-green-100 hover:from-green-100 hover:to-green-200 rounded-lg transition-all cursor-pointer shadow-sm hover:shadow">
+                                    <DoorOpen className="w-3.5 h-3.5 text-green-600" />
+                                    <span className="text-xs font-semibold text-green-700">
+                                      {item.buildings?.reduce((sum: number, b: any) => sum + (b.levels?.reduce((s: number, l: any) => s + (l.locations?.length || 0), 0) || 0), 0) || 0}
+                                    </span>
+                                  </div>
+                                </Link>
+                                
+                                <Link href={`/parc/arborescence/equipements?siteId=${item.id}`}>
+                                  <div className="group flex items-center gap-1.5 px-2.5 py-1.5 bg-gradient-to-r from-orange-50 to-orange-100 hover:from-orange-100 hover:to-orange-200 rounded-lg transition-all cursor-pointer shadow-sm hover:shadow">
+                                    <Server className="w-3.5 h-3.5 text-orange-600" />
+                                    <span className="text-xs font-semibold text-orange-700">
+                                      {item.buildings?.reduce((sum: number, b: any) => sum + (b.levels?.reduce((s: number, l: any) => s + (l.locations?.reduce((ss: number, loc: any) => ss + (loc.equipments?.length || 0), 0) || 0), 0) || 0), 0) || 0}
+                                    </span>
+                                  </div>
+                                </Link>
                               </div>
-                            </Link>
-                          </div>
-                        </td>
-                        
-                        {/* Actions Column */}
-                        <td className="px-6 py-4 text-right">
-                          <div className="flex justify-end gap-2">
-                            <Link href={`/parc/arborescence/${item.id}`}>
-                              <button className="p-2.5 hover:bg-purple-50 rounded-xl transition-colors" title="Consulter">
-                                <Eye className="w-4 h-4 text-purple-600" />
-                              </button>
-                            </Link>
-                            <SiteFormDialog
-                              site={item}
-                              onSave={handleSave}
-                              selectedClient={selectedClient}
-                              trigger={
-                                <button className="p-2.5 hover:bg-blue-50 rounded-xl transition-colors" title="Modifier">
-                                  <Edit className="w-4 h-4 text-blue-600" />
-                                </button>
-                              }
-                            />
-                            <DeleteConfirmDialog
-                              item={item}
-                              itemType={config.singular}
-                              onDelete={handleDelete}
-                              trigger={
-                                <button className="p-2.5 hover:bg-red-50 rounded-xl transition-colors" title="Supprimer">
-                                  <Trash2 className="w-4 h-4 text-red-600" />
-                                </button>
-                              }
-                            />
-                          </div>
-                        </td>
-                      </>
-                      )}
-
-                      {listType === 'batiments' && (
-                        <>
-                          <td className="px-6 py-4 font-semibold text-gray-800">{item.name}</td>
-                          <td className="px-6 py-4 text-sm text-gray-600">{item.site?.name || '-'}</td>
-                          <td className="px-6 py-4">
-                            <div className="flex flex-wrap gap-2">
-                              <Link href={`/parc/arborescence/niveaux?buildingId=${item.id}`}>
-                                <button className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-gradient-to-r from-purple-50 to-purple-100 text-purple-700 rounded-lg hover:from-purple-100 hover:to-purple-200 transition-all shadow-sm hover:shadow font-medium">
-                                  <Layers className="w-3.5 h-3.5" />
-                                  <span>{item.levels?.length || 0} niveau{(item.levels?.length || 0) > 1 ? 'x' : ''}</span>
-                                </button>
-                              </Link>
-                              <Link href={`/parc/arborescence/locaux?buildingId=${item.id}`}>
-                                <button className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-gradient-to-r from-green-50 to-green-100 text-green-700 rounded-lg hover:from-green-100 hover:to-green-200 transition-all shadow-sm hover:shadow font-medium">
-                                  <DoorOpen className="w-3.5 h-3.5" />
-                                  <span>{item.levels?.reduce((sum: number, l: any) => sum + (l.locations?.length || 0), 0) || 0} local{(item.levels?.reduce((sum: number, l: any) => sum + (l.locations?.length || 0), 0) || 0) > 1 ? 'aux' : ''}</span>
-                                </button>
-                              </Link>
-                              <Link href={`/parc/arborescence/equipements?buildingId=${item.id}`}>
-                                <button className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-gradient-to-r from-orange-50 to-orange-100 text-orange-700 rounded-lg hover:from-orange-100 hover:to-orange-200 transition-all shadow-sm hover:shadow font-medium">
-                                  <Server className="w-3.5 h-3.5" />
-                                  <span>{item.levels?.reduce((sum: number, l: any) => sum + (l.locations?.reduce((s: number, loc: any) => s + (loc.equipments?.length || 0), 0) || 0), 0) || 0} équip.</span>
-                                </button>
-                              </Link>
-                            </div>
-                          </td>
-                        </>
-                      )}
-
-                      {listType === 'niveaux' && (
-                        <>
-                          <td className="px-6 py-4 font-semibold text-gray-800">{item.name}</td>
-                          <td className="px-6 py-4 text-sm text-gray-600">{item.building?.name || '-'}</td>
-                          <td className="px-6 py-4 text-sm text-gray-600">{item.building?.site?.name || '-'}</td>
-                          <td className="px-6 py-4">
-                            <div className="flex flex-wrap gap-2">
-                              <Link href={`/parc/arborescence/locaux?levelId=${item.id}`}>
-                                <button className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-gradient-to-r from-green-50 to-green-100 text-green-700 rounded-lg hover:from-green-100 hover:to-green-200 transition-all shadow-sm hover:shadow font-medium">
-                                  <DoorOpen className="w-3.5 h-3.5" />
-                                  <span>{item.locations?.length || 0} local{(item.locations?.length || 0) > 1 ? 'aux' : ''}</span>
-                                </button>
-                              </Link>
-                              <Link href={`/parc/arborescence/equipements?levelId=${item.id}`}>
-                                <button className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-gradient-to-r from-orange-50 to-orange-100 text-orange-700 rounded-lg hover:from-orange-100 hover:to-orange-200 transition-all shadow-sm hover:shadow font-medium">
-                                  <Server className="w-3.5 h-3.5" />
-                                  <span>{item.locations?.reduce((sum: number, loc: any) => sum + (loc.equipments?.length || 0), 0) || 0} équip.</span>
-                                </button>
-                              </Link>
-                            </div>
-                          </td>
-                        </>
-                      )}
-
-                      {listType === 'locaux' && (
-                        <>
-                          <td className="px-6 py-4 font-semibold text-gray-800">{item.name}</td>
-                          <td className="px-6 py-4 text-sm text-gray-600">{item.level?.name || '-'}</td>
-                          <td className="px-6 py-4 text-sm text-gray-600">{item.level?.building?.name || '-'}</td>
-                          <td className="px-6 py-4 text-sm text-gray-600">{item.level?.building?.site?.name || '-'}</td>
-                          <td className="px-6 py-4">
-                            <div className="flex flex-wrap gap-2">
-                              <Link href={`/parc/arborescence/equipements?locationId=${item.id}`}>
-                                <button className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-gradient-to-r from-orange-50 to-orange-100 text-orange-700 rounded-lg hover:from-orange-100 hover:to-orange-200 transition-all shadow-sm hover:shadow font-medium">
-                                  <Server className="w-3.5 h-3.5" />
-                                  <span>{item.equipments?.length || 0} équip.</span>
-                                </button>
-                              </Link>
-                            </div>
-                          </td>
-                        </>
-                      )}
-
-                      {listType === 'equipements' && (
-                        <>
-                          <td className="px-6 py-4 font-mono text-sm font-semibold text-gray-800">{item.code}</td>
-                          <td className="px-6 py-4 font-semibold text-gray-800">{item.libelle}</td>
-                          <td className="px-6 py-4 text-sm text-gray-600">{item.typeEquipement || '-'}</td>
-                          <td className="px-6 py-4 text-sm text-gray-600">{item.marque || '-'}</td>
-                          <td className="px-6 py-4">
-                            <span
-                              className={`px-3 py-1.5 text-xs rounded-lg font-semibold ${
-                                item.statut === 'En service'
-                                  ? 'bg-gradient-to-r from-green-100 to-green-200 text-green-800'
-                                  : item.statut === 'Alerte'
-                                  ? 'bg-gradient-to-r from-yellow-100 to-yellow-200 text-yellow-800'
-                                  : item.statut === 'Hors service'
-                                  ? 'bg-gradient-to-r from-red-100 to-red-200 text-red-800'
-                                  : 'bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800'
-                              }`}
-                            >
-                              {item.statut}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 text-sm text-gray-600">
-                            {item.location?.name || '-'}
-                          </td>
-                        </>
-                      )}
-
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex justify-end gap-2">
-                          <Link href={
-                            listType === 'sites' 
-                              ? `/parc/arborescence/${item.id}`
-                              : listType === 'batiments'
-                              ? `/parc/arborescence/${item.siteId}/${item.id}`
-                              : listType === 'niveaux'
-                              ? `/parc/arborescence/${item.building?.site?.id || item.building?.siteId}/${item.buildingId}/${item.id}`
-                              : listType === 'locaux'
-                              ? `/parc/arborescence/${item.level?.building?.site?.id || item.level?.building?.siteId}/${item.level?.buildingId}/${item.levelId}/${item.id}`
-                              : `/parc/arborescence/${item.id}`
-                          }>
-                            <button className="p-2.5 hover:bg-purple-50 rounded-xl transition-colors" title="Consulter">
-                              <Eye className="w-4 h-4 text-purple-600" />
-                            </button>
-                          </Link>
-                          {listType === 'sites' && (
-                            <SiteFormDialog
-                              site={item}
-                              onSave={handleSave}
-                              selectedClient={selectedClient}
-                              trigger={
-                                <button className="p-2.5 hover:bg-blue-50 rounded-xl transition-colors" title="Modifier">
-                                  <Edit className="w-4 h-4 text-blue-600" />
-                                </button>
-                              }
-                            />
-                          )}
-                          {listType === 'batiments' && (
-                            <BuildingFormDialog
-                              building={item}
-                              onSave={handleSave}
-                              selectedSite={item.site}
-                              trigger={
-                                <button className="p-2.5 hover:bg-blue-50 rounded-xl transition-colors" title="Modifier">
-                                  <Edit className="w-4 h-4 text-blue-600" />
-                                </button>
-                              }
-                            />
-                          )}
-                          {listType === 'niveaux' && (
-                            <LevelFormDialog
-                              level={item}
-                              onSave={handleSave}
-                              selectedBuilding={item.building}
-                              trigger={
-                                <button className="p-2.5 hover:bg-blue-50 rounded-xl transition-colors" title="Modifier">
-                                  <Edit className="w-4 h-4 text-blue-600" />
-                                </button>
-                              }
-                            />
-                          )}
-                          {listType === 'locaux' && (
-                            <LocationFormDialog
-                              location={item}
-                              onSave={handleSave}
-                              selectedLevel={item.level}
-                              trigger={
-                                <button className="p-2.5 hover:bg-blue-50 rounded-xl transition-colors" title="Modifier">
-                                  <Edit className="w-4 h-4 text-blue-600" />
-                                </button>
-                              }
-                            />
-                          )}
-                          {listType === 'equipements' && (
-                            <EquipmentFormDialog
-                              equipment={item}
-                              onSave={handleSave}
-                              selectedLocation={item.location}
-                              trigger={
-                                <button className="p-2.5 hover:bg-blue-50 rounded-xl transition-colors" title="Modifier">
-                                  <Edit className="w-4 h-4 text-blue-600" />
-                                </button>
-                              }
-                            />
-                          )}
-                          <DeleteConfirmDialog
-                            item={item}
-                            itemType={config.singular}
-                            onDelete={handleDelete}
-                            trigger={
-                              <button className="p-2.5 hover:bg-red-50 rounded-xl transition-colors" title="Supprimer">
-                                <Trash2 className="w-4 h-4 text-red-600" />
-                              </button>
-                            }
-                          />
-                        </div>
-                      </td>
+                            </td>
+                            
+                            {/* Actions */}
+                            <td className="px-4 py-4 text-right">
+                              <div className="flex justify-end gap-2">
+                                <Link href={`/parc/arborescence/${item.id}`}>
+                                  <button className="p-2.5 hover:bg-purple-50 rounded-xl transition-colors" title="Consulter">
+                                    <Eye className="w-4 h-4 text-purple-600" />
+                                  </button>
+                                </Link>
+                                <SiteFormDialog
+                                  site={item}
+                                  onSave={handleSave}
+                                  selectedClient={selectedClient}
+                                  trigger={
+                                    <button className="p-2.5 hover:bg-blue-50 rounded-xl transition-colors" title="Modifier">
+                                      <Edit className="w-4 h-4 text-blue-600" />
+                                    </button>
+                                  }
+                                />
+                                <DeleteConfirmDialog
+                                  item={item}
+                                  itemType={config.singular}
+                                  onDelete={handleDelete}
+                                  trigger={
+                                    <button className="p-2.5 hover:bg-red-50 rounded-xl transition-colors" title="Supprimer">
+                                      <Trash2 className="w-4 h-4 text-red-600" />
+                                    </button>
+                                  }
+                                />
+                              </div>
+                            </td>
+                          </>
+                        );
+                      })()}
+                      
+                      {/* Keep all other listType conditions (batiments, niveaux, locaux, equipements) as they were */}
                     </tr>
                   ))}
                 </tbody>

@@ -52,7 +52,7 @@ const HIERARCHY_CONFIG = {
     singular: 'Niveau',
     icon: Layers,
     apiEndpoint: '/api/levels',
-    columns: ['Image', 'Nom', 'Bâtiment', 'Site', 'Sous-niveaux', 'Actions'],
+    columns: ['Nom', 'Bâtiment', 'Site', 'Sous-niveaux', 'Actions'],
     filters: ['site', 'building'],
   },
   locaux: {
@@ -1592,7 +1592,23 @@ export default function HierarchyListPage({
       </div>
 
       <div className="bg-white rounded-2xl shadow-lg p-8 border border-purple-100">
-        <h3 className="text-xl font-bold text-gray-800 mb-6">Statistiques</h3>
+        <div className=' flex flex-row justify-between'>
+          <h3 className="text-xl font-bold text-gray-800 mb-6">Statistiques</h3>
+          {listType === 'sites' && (
+              <button
+                onClick={() => setIsFilterPanelOpen(true)}
+                className="p-2.5 border-2 border-purple-200 rounded-xl hover:bg-purple-50 transition-all hover:shadow-md relative"
+                title="Filtres avancés"
+              >
+                <Filter className="h-5 w-5 text-purple-600" />
+                {getActiveAdvancedFilterCount() > 0 && (
+                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-purple-600 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                    {getActiveAdvancedFilterCount()}
+                  </span>
+                )}
+              </button>
+            )}
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="p-6 bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl border border-purple-200">
             <div className="flex items-center justify-between">

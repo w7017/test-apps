@@ -1977,10 +1977,239 @@ export default function HierarchyListPage({
                           </>
                         );
                       })()}
-                      
-                      {/* Keep all other listType conditions (batiments, niveaux, locaux, equipements) as they were */}
+                      {listType === 'batiments' && (
+                        <>
+                          <td className="px-4 py-4">
+                            <Image
+                              src={item.image || 'https://placehold.co/60x60'}
+                              alt={item.name}
+                              width={60}
+                              height={60}
+                              className="rounded-xl object-cover shadow-md"
+                            />
+                          </td>
+                          <td className="px-4 py-4">
+                            <span className="font-bold text-gray-800">{item.name}</span>
+                          </td>
+                          <td className="px-4 py-4">
+                            <span className="text-sm text-gray-600">{item.site?.name || '-'}</span>
+                          </td>
+                          <td className="px-4 py-4">
+                            <div className="flex items-center gap-2">
+                              <Link href={`/parc/arborescence/niveaux?buildingId=${item.id}`}>
+                                <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-purple-50 hover:bg-purple-100 rounded-lg transition-all cursor-pointer">
+                                  <Layers className="w-3.5 h-3.5 text-purple-600" />
+                                  <span className="text-xs font-semibold text-purple-700">
+                                    {item.levels?.length || 0}
+                                  </span>
+                                </div>
+                              </Link>
+                            </div>
+                          </td>
+                          <td className="px-4 py-4 text-right">
+                            <div className="flex justify-end gap-2">
+                              <BuildingFormDialog
+                                building={item}
+                                onSave={handleSave}
+                                selectedSite={item.site}
+                                trigger={
+                                  <button className="p-2.5 hover:bg-blue-50 rounded-xl transition-colors">
+                                    <Edit className="w-4 h-4 text-blue-600" />
+                                  </button>
+                                }
+                              />
+                              <DeleteConfirmDialog
+                                item={item}
+                                itemType={config.singular}
+                                onDelete={handleDelete}
+                                trigger={
+                                  <button className="p-2.5 hover:bg-red-50 rounded-xl transition-colors">
+                                    <Trash2 className="w-4 h-4 text-red-600" />
+                                  </button>
+                                }
+                              />
+                            </div>
+                          </td>
+                        </>
+                      )}
+
+                      {listType === 'niveaux' && (
+                        <>
+                          <td className="px-4 py-4">
+                            <span className="font-bold text-gray-800">{item.name}</span>
+                          </td>
+                          <td className="px-4 py-4">
+                            <span className="text-sm text-gray-600">{item.building?.name || '-'}</span>
+                          </td>
+                          <td className="px-4 py-4">
+                            <span className="text-sm text-gray-600">{item.building?.site?.name || '-'}</span>
+                          </td>
+                          <td className="px-4 py-4">
+                            <div className="flex items-center gap-2">
+                              <Link href={`/parc/arborescence/locaux?levelId=${item.id}`}>
+                                <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-green-50 hover:bg-green-100 rounded-lg transition-all cursor-pointer">
+                                  <DoorOpen className="w-3.5 h-3.5 text-green-600" />
+                                  <span className="text-xs font-semibold text-green-700">
+                                    {item.locations?.length || 0}
+                                  </span>
+                                </div>
+                              </Link>
+                            </div>
+                          </td>
+                          <td className="px-4 py-4 text-right">
+                            <div className="flex justify-end gap-2">
+                              <LevelFormDialog
+                                level={item}
+                                onSave={handleSave}
+                                selectedBuilding={item.building}
+                                trigger={
+                                  <button className="p-2.5 hover:bg-blue-50 rounded-xl transition-colors">
+                                    <Edit className="w-4 h-4 text-blue-600" />
+                                  </button>
+                                }
+                              />
+                              <DeleteConfirmDialog
+                                item={item}
+                                itemType={config.singular}
+                                onDelete={handleDelete}
+                                trigger={
+                                  <button className="p-2.5 hover:bg-red-50 rounded-xl transition-colors">
+                                    <Trash2 className="w-4 h-4 text-red-600" />
+                                  </button>
+                                }
+                              />
+                            </div>
+                          </td>
+                        </>
+                      )}
+
+                      {listType === 'locaux' && (
+                        <>
+                          <td className="px-4 py-4">
+                            <Image
+                              src={item.image || 'https://placehold.co/60x60'}
+                              alt={item.name}
+                              width={60}
+                              height={60}
+                              className="rounded-xl object-cover shadow-md"
+                            />
+                          </td>
+                          <td className="px-4 py-4">
+                            <span className="font-bold text-gray-800">{item.name}</span>
+                          </td>
+                          <td className="px-4 py-4">
+                            <span className="text-sm text-gray-600">{item.level?.name || '-'}</span>
+                          </td>
+                          <td className="px-4 py-4">
+                            <span className="text-sm text-gray-600">{item.level?.building?.name || '-'}</span>
+                          </td>
+                          <td className="px-4 py-4">
+                            <span className="text-sm text-gray-600">{item.level?.building?.site?.name || '-'}</span>
+                          </td>
+                          <td className="px-4 py-4">
+                            <div className="flex items-center gap-2">
+                              <Link href={`/parc/arborescence/equipements?locationId=${item.id}`}>
+                                <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-orange-50 hover:bg-orange-100 rounded-lg transition-all cursor-pointer">
+                                  <Server className="w-3.5 h-3.5 text-orange-600" />
+                                  <span className="text-xs font-semibold text-orange-700">
+                                    {item.equipments?.length || 0}
+                                  </span>
+                                </div>
+                              </Link>
+                            </div>
+                          </td>
+                          <td className="px-4 py-4 text-right">
+                            <div className="flex justify-end gap-2">
+                              <LocationFormDialog
+                                location={item}
+                                onSave={handleSave}
+                                selectedLevel={item.level}
+                                trigger={
+                                  <button className="p-2.5 hover:bg-blue-50 rounded-xl transition-colors">
+                                    <Edit className="w-4 h-4 text-blue-600" />
+                                  </button>
+                                }
+                              />
+                              <DeleteConfirmDialog
+                                item={item}
+                                itemType={config.singular}
+                                onDelete={handleDelete}
+                                trigger={
+                                  <button className="p-2.5 hover:bg-red-50 rounded-xl transition-colors">
+                                    <Trash2 className="w-4 h-4 text-red-600" />
+                                  </button>
+                                }
+                              />
+                            </div>
+                          </td>
+                        </>
+                      )}
+
+                      {listType === 'equipements' && (
+                        <>
+                          <td className="px-4 py-4">
+                            <Image
+                              src={item.photoUrl || item.image || 'https://placehold.co/60x60'}
+                              alt={item.libelle}
+                              width={60}
+                              height={60}
+                              className="rounded-xl object-cover shadow-md"
+                            />
+                          </td>
+                          <td className="px-4 py-4">
+                            <span className="font-mono text-sm font-bold text-gray-800">{item.code}</span>
+                          </td>
+                          <td className="px-4 py-4">
+                            <span className="font-semibold text-gray-800">{item.libelle}</span>
+                          </td>
+                          <td className="px-4 py-4">
+                            <span className="text-sm text-gray-600">{item.typeEquipement || '-'}</span>
+                          </td>
+                          <td className="px-4 py-4">
+                            <span className="text-sm text-gray-600">{item.marque || '-'}</span>
+                          </td>
+                          <td className="px-4 py-4">
+                            <span className={`px-3 py-1.5 text-xs rounded-lg font-semibold ${
+                              item.statut === 'En service' ? 'bg-green-100 text-green-700' :
+                              item.statut === 'Alerte' ? 'bg-yellow-100 text-yellow-700' :
+                              item.statut === 'Hors service' ? 'bg-red-100 text-red-700' :
+                              'bg-gray-100 text-gray-700'
+                            }`}>
+                              {item.statut}
+                            </span>
+                          </td>
+                          <td className="px-4 py-4">
+                            <span className="text-sm text-gray-600">{item.location?.name || '-'}</span>
+                          </td>
+                          <td className="px-4 py-4 text-right">
+                            <div className="flex justify-end gap-2">
+                              <EquipmentFormDialog
+                                equipment={item}
+                                onSave={handleSave}
+                                selectedLocation={item.location}
+                                trigger={
+                                  <button className="p-2.5 hover:bg-blue-50 rounded-xl transition-colors">
+                                    <Edit className="w-4 h-4 text-blue-600" />
+                                  </button>
+                                }
+                              />
+                              <DeleteConfirmDialog
+                                item={item}
+                                itemType={config.singular}
+                                onDelete={handleDelete}
+                                trigger={
+                                  <button className="p-2.5 hover:bg-red-50 rounded-xl transition-colors">
+                                    <Trash2 className="w-4 h-4 text-red-600" />
+                                  </button>
+                                }
+                              />
+                            </div>
+                          </td>
+                        </>
+                      )}
                     </tr>
                   ))}
+                      
                 </tbody>
               </table>
             </div>

@@ -27,6 +27,11 @@ model Site {
   codeClient  String?
   codeAffaire String?
   codeContrat String?
+  
+  // Nouveaux champs pour la planification et l'avancement
+  estPlanifie Boolean     @default(false)
+  avancement  String      @default("non_commence") // "non_commence", "commence", "en_cours", "termine"
+  
   client      Client      @relation(fields: [clientId], references: [id])
   clientId    String
   buildings   Building[]
@@ -117,7 +122,7 @@ model Audit {
   auditeur       String
   statutGlobal   String
   notesGlobales  String?
-  checklist      Json
+  checklist      Json          // Structure: [{critere: string, valeur: any, criticite: "critique" | "non_critique"}]
   photos         Json
   date           DateTime      @default(now())
   createdAt      DateTime      @default(now())
@@ -125,5 +130,3 @@ model Audit {
 
   @@unique([equipmentId, version])
 }
-
-    

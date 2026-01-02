@@ -44,7 +44,7 @@ const HIERARCHY_CONFIG = {
     singular: 'Bâtiment',
     icon: Building,
     apiEndpoint: '/api/buildings',
-    columns: ['Image', 'Nom', 'Type', 'Site', 'Sous-niveaux', 'Actions'],
+    columns: ['Image', 'Nom', 'Type', 'Site', 'Arborescence', 'Actions'],
     filters: ['site'],
   },
   niveaux: {
@@ -52,7 +52,7 @@ const HIERARCHY_CONFIG = {
     singular: 'Niveau',
     icon: Layers,
     apiEndpoint: '/api/levels',
-    columns: ['Nom', 'Bâtiment', 'Site', 'Sous-niveaux', 'Actions'],
+    columns: ['Nom', 'Bâtiment', 'Site', 'Arborescence', 'Actions'],
     filters: ['site', 'building'],
   },
   locaux: {
@@ -60,7 +60,7 @@ const HIERARCHY_CONFIG = {
     singular: 'Local',
     icon: DoorOpen,
     apiEndpoint: '/api/locations',
-    columns: ['Image', 'Nom', 'Niveau', 'Bâtiment', 'Site', 'Sous-niveaux', 'Actions'],
+    columns: ['Image', 'Nom', 'Niveau', 'Bâtiment', 'Site', 'Arborescence', 'Actions'],
     filters: ['site', 'building', 'level'],
   },
   equipements: {
@@ -2036,12 +2036,30 @@ export default function HierarchyListPage({
                             <span className="text-sm text-gray-600">{item.site?.name || '-'}</span>
                           </td>
                           <td className="px-4 py-4">
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 whitespace-nowrap">
                               <Link href={`/parc/arborescence/niveaux?buildingId=${item.id}`}>
-                                <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-purple-50 hover:bg-purple-100 rounded-lg transition-all cursor-pointer">
+                                <div className="group flex items-center gap-1.5 px-2.5 py-1.5 bg-gradient-to-r from-purple-50 to-purple-100 hover:from-purple-100 hover:to-purple-200 rounded-lg transition-all cursor-pointer shadow-sm hover:shadow">
                                   <Layers className="w-3.5 h-3.5 text-purple-600" />
                                   <span className="text-xs font-semibold text-purple-700">
                                     {item.levels?.length || 0}
+                                  </span>
+                                </div>
+                              </Link>
+                              
+                              <Link href={`/parc/arborescence/locaux?buildingId=${item.id}`}>
+                                <div className="group flex items-center gap-1.5 px-2.5 py-1.5 bg-gradient-to-r from-green-50 to-green-100 hover:from-green-100 hover:to-green-200 rounded-lg transition-all cursor-pointer shadow-sm hover:shadow">
+                                  <DoorOpen className="w-3.5 h-3.5 text-green-600" />
+                                  <span className="text-xs font-semibold text-green-700">
+                                    {item.levels?.reduce((sum: number, l: any) => sum + (l.locations?.length || 0), 0) || 0}
+                                  </span>
+                                </div>
+                              </Link>
+                              
+                              <Link href={`/parc/arborescence/equipements?buildingId=${item.id}`}>
+                                <div className="group flex items-center gap-1.5 px-2.5 py-1.5 bg-gradient-to-r from-orange-50 to-orange-100 hover:from-orange-100 hover:to-orange-200 rounded-lg transition-all cursor-pointer shadow-sm hover:shadow">
+                                  <Server className="w-3.5 h-3.5 text-orange-600" />
+                                  <span className="text-xs font-semibold text-orange-700">
+                                    {item.levels?.reduce((sum: number, l: any) => sum + (l.locations?.reduce((s: number, loc: any) => s + (loc.equipments?.length || 0), 0) || 0), 0) || 0}
                                   </span>
                                 </div>
                               </Link>
@@ -2086,12 +2104,21 @@ export default function HierarchyListPage({
                             <span className="text-sm text-gray-600">{item.building?.site?.name || '-'}</span>
                           </td>
                           <td className="px-4 py-4">
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 whitespace-nowrap">
                               <Link href={`/parc/arborescence/locaux?levelId=${item.id}`}>
-                                <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-green-50 hover:bg-green-100 rounded-lg transition-all cursor-pointer">
+                                <div className="group flex items-center gap-1.5 px-2.5 py-1.5 bg-gradient-to-r from-green-50 to-green-100 hover:from-green-100 hover:to-green-200 rounded-lg transition-all cursor-pointer shadow-sm hover:shadow">
                                   <DoorOpen className="w-3.5 h-3.5 text-green-600" />
                                   <span className="text-xs font-semibold text-green-700">
                                     {item.locations?.length || 0}
+                                  </span>
+                                </div>
+                              </Link>
+                              
+                              <Link href={`/parc/arborescence/equipements?levelId=${item.id}`}>
+                                <div className="group flex items-center gap-1.5 px-2.5 py-1.5 bg-gradient-to-r from-orange-50 to-orange-100 hover:from-orange-100 hover:to-orange-200 rounded-lg transition-all cursor-pointer shadow-sm hover:shadow">
+                                  <Server className="w-3.5 h-3.5 text-orange-600" />
+                                  <span className="text-xs font-semibold text-orange-700">
+                                    {item.locations?.reduce((sum: number, loc: any) => sum + (loc.equipments?.length || 0), 0) || 0}
                                   </span>
                                 </div>
                               </Link>
@@ -2148,9 +2175,9 @@ export default function HierarchyListPage({
                             <span className="text-sm text-gray-600">{item.level?.building?.site?.name || '-'}</span>
                           </td>
                           <td className="px-4 py-4">
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 whitespace-nowrap">
                               <Link href={`/parc/arborescence/equipements?locationId=${item.id}`}>
-                                <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-orange-50 hover:bg-orange-100 rounded-lg transition-all cursor-pointer">
+                                <div className="group flex items-center gap-1.5 px-2.5 py-1.5 bg-gradient-to-r from-orange-50 to-orange-100 hover:from-orange-100 hover:to-orange-200 rounded-lg transition-all cursor-pointer shadow-sm hover:shadow">
                                   <Server className="w-3.5 h-3.5 text-orange-600" />
                                   <span className="text-xs font-semibold text-orange-700">
                                     {item.equipments?.length || 0}

@@ -44,7 +44,7 @@ const HIERARCHY_CONFIG = {
     singular: 'Bâtiment',
     icon: Building,
     apiEndpoint: '/api/buildings',
-    columns: ['Image', 'Nom', 'Site', 'Sous-niveaux', 'Actions'],
+    columns: ['Image', 'Nom', 'Type', 'Site', 'Sous-niveaux', 'Actions'],
     filters: ['site'],
   },
   niveaux: {
@@ -68,7 +68,7 @@ const HIERARCHY_CONFIG = {
     singular: 'Équipement',
     icon: Server,
     apiEndpoint: '/api/equipments',
-    columns: ['Image', 'Code', 'Libellé', 'Type', 'Marque', 'Statut', 'Local', 'Actions'],
+    columns: ['Image', 'Code', 'Libellé', 'Type', 'Marque', 'Statut', 'GMAO', 'Local', 'Actions'],
     filters: ['site', 'building', 'level', 'location'],
   },
 };
@@ -421,6 +421,7 @@ function BuildingFormDialog({ building, onSave, trigger, selectedSite }: any) {
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
+    type: '',
     image: '',
   });
   const [error, setError] = useState('');
@@ -430,11 +431,13 @@ function BuildingFormDialog({ building, onSave, trigger, selectedSite }: any) {
     if (isOpen && building) {
       setFormData({
         name: building.name || '',
+        type: building.type || '',
         image: building.image || '',
       });
     } else if (isOpen && !building) {
       setFormData({
         name: '',
+        type: '',
         image: '',
       });
     }
@@ -493,9 +496,22 @@ function BuildingFormDialog({ building, onSave, trigger, selectedSite }: any) {
       {isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-8">
-            <h2 className="text-2xl font-bold mb-6 text-gray-800">
-              {isEditing ? 'Modifier' : 'Ajouter'} un Bâtiment
-            </h2>
+            <div className="flex items-start justify-between mb-6">
+              <h2 className="text-2xl font-bold text-gray-800">
+                {isEditing ? 'Modifier' : 'Ajouter'} un Bâtiment
+              </h2>
+              {formData.image && (
+                <div className="ml-4">
+                  <Image
+                    src={formData.image}
+                    alt="Preview"
+                    width={80}
+                    height={80}
+                    className="rounded-xl object-cover shadow-md"
+                  />
+                </div>
+              )}
+            </div>
             
             <div className="space-y-5">
               <div>
@@ -508,6 +524,25 @@ function BuildingFormDialog({ building, onSave, trigger, selectedSite }: any) {
                   placeholder="Ex: Bâtiment Principal"
                   disabled={isLoading}
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-2 text-gray-700">Type de bâtiment</label>
+                <select
+                  value={formData.type}
+                  onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                  disabled={isLoading}
+                >
+                  <option value="">Sélectionner un type</option>
+                  <option value="Bureau">Bureau</option>
+                  <option value="Production">Production</option>
+                  <option value="Entrepôt">Entrepôt</option>
+                  <option value="Commercial">Commercial</option>
+                  <option value="Résidentiel">Résidentiel</option>
+                  <option value="Industriel">Industriel</option>
+                  <option value="Mixte">Mixte</option>
+                </select>
               </div>
 
               <div>
@@ -836,6 +871,7 @@ function EquipmentFormDialog({ equipment, onSave, trigger, selectedLocation }: a
     typeEquipement: '',
     marque: '',
     statut: 'En service',
+    gmao: false,
     image: '',
   });
   const [error, setError] = useState('');
@@ -849,6 +885,7 @@ function EquipmentFormDialog({ equipment, onSave, trigger, selectedLocation }: a
         typeEquipement: equipment.typeEquipement || '',
         marque: equipment.marque || '',
         statut: equipment.statut || 'En service',
+        gmao: equipment.gmao || false,
         image: equipment.image || equipment.photoUrl || '',
       });
     } else if (isOpen && !equipment) {
@@ -858,6 +895,7 @@ function EquipmentFormDialog({ equipment, onSave, trigger, selectedLocation }: a
         typeEquipement: '',
         marque: '',
         statut: 'En service',
+        gmao: false,
         image: '',
       });
     }
@@ -1992,6 +2030,9 @@ export default function HierarchyListPage({
                             <span className="font-bold text-gray-800">{item.name}</span>
                           </td>
                           <td className="px-4 py-4">
+                            <span className="text-sm text-gray-600">{item.type || '-'}</span>
+                          </td>
+                          <td className="px-4 py-4">
                             <span className="text-sm text-gray-600">{item.site?.name || '-'}</span>
                           </td>
                           <td className="px-4 py-4">
@@ -2177,6 +2218,15 @@ export default function HierarchyListPage({
                             }`}>
                               {item.statut}
                             </span>
+                          </td>
+                          <td className="px-4 py-4">
+                            {item.gmao ? (
+                              <span className="px-3 py-1.5 text-xs font-bold rounded-lg bg-green-100 text-green-700">
+                                oui
+                              </span>
+                            ) : (
+                              <span className="text-gray-400 font-medium">-</span>
+                            )}
                           </td>
                           <td className="px-4 py-4">
                             <span className="text-sm text-gray-600">{item.location?.name || '-'}</span>
